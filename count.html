@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<title>ตรวจนับและกระทบยอด — {{APP}}</title>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<!-- Bootstrap 5 -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  แก้หน้าตาได้ที่นี่ที่เดียว — เปลี่ยนค่าในบล็อกนี้พอ        ║
+   ║  ไม่ต้องไปตามแก้ข้างล่าง ทุกส่วนดึงค่าจากตัวแปรชุดนี้       ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+:root{
+  /* ---- สี ---- */
+  --app-navy:        #0A2342;   /* สีกรมท่า ใช้กับแถบหัวและปุ่มหลัก */
+  --app-navy-deep:   #061A33;   /* กรมท่าเข้มสุด ใช้ไล่เฉดแถบหัว */
+  --app-ocean:       #1B7FA8;   /* ฟ้าโอเชียน ใช้กับไฮไลต์และ hover */
+  --app-ocean-light: #EAF6FC;   /* ฟ้าอ่อน ใช้เป็นพื้นกล่อง */
+  --app-bg:          #F2F8FC;   /* พื้นหลังหน้าเว็บ */
+  --app-card:        #FFFFFF;   /* พื้นการ์ด */
+  --app-text:        #0E2033;   /* สีตัวอักษรหลัก */
+  --app-text-soft:   #50677D;   /* สีตัวอักษรรอง เช่น ป้ายกำกับ */
+  --app-border:      #CFE2EF;   /* สีเส้นขอบ */
+  --app-good:        #1A7F5A;   /* เขียว ยอดตรงกัน */
+  --app-warn:        #B07503;   /* เหลือง ยอดเกิน */
+  --app-danger:      #B3341F;   /* แดง ยอดขาด */
+
+  /* ---- ตัวอักษร ---- */
+  --app-font:        "IBM Plex Sans Thai", "Noto Sans Thai", system-ui, sans-serif;
+  --app-font-head:   "Kanit", "IBM Plex Sans Thai", sans-serif;
+  --app-size-base:   15px;      /* ขนาดตัวอักษรทั้งหน้า */
+
+  /* ---- รูปทรง ---- */
+  --app-radius:      10px;      /* ความกลมของมุมการ์ดและปุ่ม */
+  --app-maxwidth:    980px;     /* ความกว้างสูงสุดของเนื้อหา */
+}
+/* ╚══════ สิ้นสุดส่วนที่แก้ง่าย ══════╝ */
+
+
+/* ---------- โครงหน้า ---------- */
+body{
+  background: var(--app-bg);
+  color: var(--app-text);
+  font-family: var(--app-font);
+  font-size: var(--app-size-base);
+}
+.app-wrap{ max-width: var(--app-maxwidth); margin: 0 auto; padding: 0 16px 56px; }
+
+/* แถบหัวเรื่อง — แก้สีไล่เฉดได้ที่ตัวแปร --app-navy-deep / --app-navy */
+.app-header{
+  background: linear-gradient(160deg, var(--app-navy-deep) 0%, var(--app-navy) 60%, #123A63 100%);
+  color: #EAF6FC;
+  padding: 26px 16px 22px;
+  border-bottom: 3px solid var(--app-ocean);
+  margin-bottom: 26px;
+}
+.app-header .inner{ max-width: var(--app-maxwidth); margin: 0 auto; }
+.app-header .org{
+  font-size: 11px; letter-spacing:.13em; text-transform: uppercase;
+  color: #79CBEA; font-weight: 600; margin-bottom: 6px;
+}
+.app-header h1{
+  font-family: var(--app-font-head); font-weight: 600;
+  font-size: clamp(21px, 4vw, 29px); margin: 0; color:#fff;
+}
+.app-header .tagline{ color:#A8CFE4; font-size: 13px; margin: 4px 0 0; }
+
+/* การ์ด */
+.app-card{
+  background: var(--app-card);
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-radius);
+  padding: 22px;
+  margin-bottom: 18px;
+}
+.app-card h2{
+  font-family: var(--app-font-head); font-weight: 600; font-size: 17px;
+  margin: 0 0 16px; display:flex; align-items:center; gap:9px;
+}
+.app-card h2::before{
+  content:""; width:3px; height:17px; background: var(--app-ocean);
+  border-radius:2px; flex:none;
+}
+
+/* ป้ายกำกับและช่องกรอก */
+.form-label{ font-size: 12.5px; font-weight: 500; color: var(--app-text-soft); margin-bottom: 4px; }
+.form-label .req{ color: var(--app-danger); }
+.form-control, .form-select{
+  border-color: var(--app-border);
+  border-radius: 8px;
+  font-size: 14.5px;
+  padding: 9px 11px;
+}
+.form-control:focus, .form-select:focus{
+  border-color: var(--app-ocean);
+  box-shadow: 0 0 0 .18rem rgba(27,127,168,.18);
+}
+.form-control[readonly]{ background: var(--app-ocean-light); color: var(--app-text); font-weight: 600; }
+
+/* ปุ่ม — ปรับสีปุ่มหลักที่ --app-navy และ hover ที่ --app-ocean */
+.btn-app{
+  background: var(--app-navy); color:#fff; border:0;
+  border-radius: 8px; padding: 10px 22px;
+  font-family: var(--app-font-head); font-weight: 500; font-size: 14.5px;
+}
+.btn-app:hover{ background: var(--app-ocean); color:#fff; }
+.btn-app-ghost{
+  background: transparent; color: var(--app-ocean);
+  border: 1px solid var(--app-border); border-radius: 8px;
+  padding: 10px 22px; font-family: var(--app-font-head); font-weight: 500; font-size: 14.5px;
+}
+.btn-app-ghost:hover{ background: var(--app-ocean-light); color: var(--app-ocean); }
+
+/* กล่องส่วนต่าง — สีเปลี่ยนตามผลลัพธ์ */
+.diff-box{
+  border-radius: 8px; padding: 14px 16px; text-align:center;
+  background: var(--app-ocean-light); border:1px solid var(--app-border);
+}
+.diff-box .lbl{ font-size: 11.5px; color: var(--app-text-soft); }
+.diff-box .val{
+  font-family: var(--app-font-head); font-weight:600; font-size: 26px; line-height:1.2;
+  font-variant-numeric: tabular-nums;
+}
+.diff-zero .val{ color: var(--app-good); }
+.diff-plus .val{ color: var(--app-warn); }
+.diff-minus .val{ color: var(--app-danger); }
+
+/* แถบความคืบหน้า */
+.progress{ height: 9px; background: var(--app-ocean-light); border-radius: 999px; }
+.progress-bar{ background: linear-gradient(90deg, var(--app-ocean), #35A3CC); }
+.prog-meta{ font-size: 12.5px; color: var(--app-text-soft); }
+
+/* กล่องข้อมูลรายการที่เลือก */
+.item-info{
+  background: var(--app-ocean-light); border-left: 3px solid var(--app-ocean);
+  border-radius: 0 8px 8px 0; padding: 12px 15px; font-size: 13.5px;
+}
+.item-info dt{ color: var(--app-text-soft); font-weight: 500; font-size: 11.5px; }
+.item-info dd{ margin: 0 0 6px; font-weight: 500; }
+
+/* พรีวิวรูปของรายการที่เลือก — ผูกกับรหัสรายการ ไม่ผูกกับลำดับแถว */
+.item-preview{
+  min-height: 220px; border: 1px solid var(--app-border); border-radius: 10px;
+  background: #fff; display:flex; align-items:center; justify-content:center;
+  overflow:hidden; color: var(--app-text-soft); text-align:center; padding: 12px;
+}
+.item-preview img{ display:block; width:100%; height:220px; object-fit:contain; background:#fff; }
+.item-preview.is-empty{ background: rgba(255,255,255,.55); font-size: 13px; }
+@media (max-width: 575.98px){ .item-preview, .item-preview img{ min-height:180px; height:180px; } }
+
+/* หน้าสรุปหลังบันทึก */
+.summary-badge{
+  display:inline-block; background: rgba(26,127,90,.12); color: var(--app-good);
+  border-radius: 999px; padding: 5px 14px; font-size: 13px; font-weight: 600;
+}
+.sum-table th{ width: 42%; color: var(--app-text-soft); font-weight: 500; font-size: 13px; }
+.sum-table td{ font-weight: 500; }
+
+/* ---------- การพิมพ์ ----------
+   เวลา กดพิมพ์ จะซ่อนทุกอย่างบนจอ เหลือเฉพาะกล่อง #printArea */
+#printArea{ display:none; }
+.count-pr-lh{
+  display:flex;
+  justify-content:flex-end;
+  align-items:center;
+  gap:7pt;
+  padding-bottom:3pt;
+  color:#101820;
+  font-family:"Sarabun","TH Sarabun New","Noto Sans Thai",serif;
+  font-size:12pt;
+  line-height:1.5;
+}
+.count-pr-lh .count-pr-names{ text-align:right; line-height:1.25; }
+.count-pr-lh .count-pr-th{ font-size:11pt; font-weight:600; }
+.count-pr-lh .count-pr-en{ display:block; font-size:7pt; font-weight:400; }
+.count-pr-lh .count-pr-seal{ height:30pt; width:auto; flex:none; }
+@media print{
+  body{ background:#fff; }
+  .no-print, .app-header, .app-card{ display:none !important; }
+  #printArea{ display:block !important; }
+  @page{ size: A4; margin: 15mm; }
+}
+</style>
+</head>
+
+<body>
+
+<!-- ══════════ แถบหัวเรื่อง ══════════ -->
+<div class="app-header no-print">
+  <div class="inner">
+    <div class="org" id="orgName">{{ORG}}</div>
+    <h1>ระบบกระทบยอดสต็อก</h1>
+  </div>
+</div>
+
+<div class="app-wrap">
+
+  <!-- ══════════ แถบความคืบหน้า ══════════ -->
+  <div class="app-card no-print" id="progCard">
+    <div class="d-flex justify-content-between align-items-end mb-2">
+      <div class="prog-meta">ความคืบหน้าการกระทบยอด</div>
+      <div class="prog-meta" id="progText">กำลังโหลด…</div>
+    </div>
+    <div class="progress"><div class="progress-bar" id="progBar" style="width:0%"></div></div>
+  </div>
+
+  <!-- ══════════ หน้าฟอร์มกรอก ══════════ -->
+  <div id="viewForm">
+    <div class="app-card">
+      <h2>1 · เลือกรายการที่จะนับ</h2>
+
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="codeInput">
+            ค้นหาด้วยรหัสหรือชื่อรายการ <span class="req">*</span>
+          </label>
+          <input class="form-control" id="codeInput" list="itemList"
+                 placeholder="พิมพ์ {{PREFIX}}- หรือชื่อของ" autocomplete="off">
+          <datalist id="itemList"></datalist>
+          <div id="facet" class="facet"></div>
+        </div>
+      </div>
+
+      <div class="item-info mt-3" id="itemInfo" style="display:none">
+        <div class="row g-3 align-items-start">
+          <div class="col-12 col-md-4">
+            <div class="item-preview is-empty" id="itemPreview" aria-live="polite">
+              <span id="itemPreviewText">กำลังโหลดรูป…</span>
+              <img id="itemPreviewImg" alt="" style="display:none">
+            </div>
+          </div>
+          <div class="col-12 col-md-8">
+            <div class="row g-2">
+              <div class="col-6 col-md-6"><dt>รหัส</dt><dd id="iiCode">-</dd></div>
+              <div class="col-6 col-md-6"><dt>หมวดหลัก</dt><dd id="iiCat">-</dd></div>
+              <div class="col-6 col-md-6"><dt>ไซส์ / รายละเอียด</dt><dd id="iiSize">-</dd></div>
+              <div class="col-6 col-md-6"><dt>สถานะภาพถ่าย</dt><dd id="iiPhoto">-</dd></div>
+              <div class="col-12"><dt>ชื่อรายการ</dt><dd id="iiName">-</dd></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="app-card" id="countCard" style="display:none">
+      <h2>2 · กรอกยอดที่นับได้จริง</h2>
+
+      <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="qtyOld">ยอดในระบบ</label>
+          <input class="form-control" id="qtyOld" readonly>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="qtyNew">ยอดที่นับได้จริง <span class="req">*</span></label>
+          <input class="form-control" id="qtyNew" type="number" min="0" step="1" placeholder="0">
+        </div>
+        <div class="col-12 col-md-6">
+          <div class="diff-box diff-zero" id="diffBox">
+            <div class="lbl">ยอดส่วนต่าง — ระบบคำนวณให้อัตโนมัติ</div>
+            <div class="val" id="diffVal">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="status">สถานะการกระทบยอด <span class="req">*</span></label>
+          <select class="form-select" id="status"></select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="onShelf">ขึ้นชั้นแล้วหรือยัง</label>
+          <select class="form-select" id="onShelf">
+            <option value="">ไม่ระบุ</option>
+            <option value="ขึ้นชั้นแล้ว">ขึ้นชั้นแล้ว</option>
+            <option value="ยังไม่ขึ้นชั้น">ยังไม่ขึ้นชั้น</option>
+          </select>
+        </div>
+        <div class="col-6 col-md-3">
+          <label class="form-label" for="condition">สภาพอุปกรณ์</label>
+          <select class="form-select" id="condition"></select>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="location">สถานที่เก็บ</label>
+          <input class="form-control" id="location" placeholder="เช่น ชั้น 11">
+        </div>
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="counter">ผู้นับ <span class="req">*</span></label>
+          <input class="form-control" id="counter" placeholder="ชื่อผู้นับรอบนี้">
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="note">
+            หมายเหตุ <span class="req" id="noteReq" style="display:none">* จำเป็นเมื่อยอดไม่ตรง</span>
+          </label>
+          <textarea class="form-control" id="note" rows="2"
+                    placeholder="ถ้ายอดไม่ตรง ระบุว่าของไปอยู่ที่ไหน เช่น เบิกไปใช้ในกิจกรรม, หาไม่พบ, ชำรุดทิ้งแล้ว"></textarea>
+        </div>
+      </div>
+
+      <div class="alert alert-danger mt-3 mb-0" id="errBox" style="display:none"></div>
+
+      <div class="d-flex flex-wrap gap-2 mt-3">
+        <button class="btn btn-app" id="btnSave">บันทึกลงชีต</button>
+        <button class="btn btn-app-ghost" id="btnReset">ล้างฟอร์ม</button>
+        <span class="align-self-center prog-meta" id="saveHint"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ หน้าสรุปหลังบันทึก ══════════ -->
+  <div id="viewSummary" style="display:none">
+    <div class="app-card">
+      <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <h2 class="mb-0" id="sumTitle">บันทึกเรียบร้อย</h2>
+        <span class="summary-badge" id="sumBadge">—</span>
+      </div>
+
+      <div id="undoNotice" class="alert alert-success mt-3 mb-3 d-none" role="status" aria-live="polite"></div>
+
+      <table class="table table-sm sum-table">
+        <tbody>
+          <tr><th>เลขที่รายการกระทบยอด</th><td id="sRecon">-</td></tr>
+          <tr><th>บันทึกเมื่อ</th><td id="sWhen">-</td></tr>
+          <tr><th>รหัส / ชื่อรายการ</th><td id="sItem">-</td></tr>
+          <tr><th>หมวดหลัก</th><td id="sCat">-</td></tr>
+          <tr><th>ยอดในระบบ</th><td id="sOld">-</td></tr>
+          <tr><th>ยอดที่นับได้จริง</th><td id="sNew">-</td></tr>
+          <tr><th>ยอดส่วนต่าง</th><td id="sDiff">-</td></tr>
+          <tr><th>สถานะ</th><td id="sStatus">-</td></tr>
+          <tr><th>ขึ้นชั้น / สถานที่เก็บ</th><td id="sLoc">-</td></tr>
+          <tr><th>สภาพอุปกรณ์</th><td id="sCond">-</td></tr>
+          <tr><th>ผู้นับ</th><td id="sCounter">-</td></tr>
+          <tr><th>หมายเหตุ</th><td id="sNote">-</td></tr>
+        </tbody>
+      </table>
+
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        <button class="btn btn-app" id="btnPrint">พิมพ์แบบฟอร์ม</button>
+        <button class="btn btn-app-ghost" id="btnNext">นับรายการต่อไป</button>
+        <button class="btn btn-outline-danger" id="btnUndo" style="display:none">Undo · เปิดให้นับใหม่</button>
+      </div>
+      <div class="form-text mt-2" id="summaryHint">
+        พิมพ์เก็บเป็นหลักฐานออฟไลน์ ข้อมูลถูกบันทึกลงแท็บ ทะเบียนพัสดุ และแท็บ RECON_LOG เรียบร้อยแล้ว
+      </div>
+    </div>
+  </div>
+
+  <!-- กล่องสำหรับหน้าพิมพ์ เนื้อหาถูกฉีดเข้ามาจาก Print.html ตอนกดพิมพ์ -->
+  <div id="printArea"></div>
+
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  สถานะหน้าเว็บ
+// ═══════════════════════════════════════════════════════
+let ITEMS = [];        // รายการทั้งหมดจากชีต
+let CURRENT = null;    // รายการที่เลือกอยู่
+let SUMMARY = null;    // ผลลัพธ์ล่าสุดที่บันทึกสำเร็จ
+let IS_ADMIN = false;
+
+const $ = id => document.getElementById(id);
+
+// ───────── เปิดหน้า: โหลดค่าตั้งต้น ─────────
+// แสดงค่าตั้งต้นและรายการที่จำไว้ในเครื่องทันที แล้วอัปเดตจากหลังบ้าน (2 คำสั่งส่งพร้อมกัน)
+//        ถ้าเริ่มกรอกแล้ว ไม่เติมช่องเลือกทับ อัปเดตแค่แถบความคืบหน้า · รายละเอียดรายการที่เลือกอ่านสดเสมอ (getItem)
+let TOUCHED = false;
+document.addEventListener('input', () => { TOUCHED = true; }, true);
+document.addEventListener('change', () => { TOUCHED = true; }, true);
+function showUndoButton(){
+  const b = $('btnUndo');
+  if (!b) return;
+  if (!IS_ADMIN || !SUMMARY){
+    b.style.display = 'none';
+    return;
+  }
+  b.style.display = '';
+  b.disabled = !!SUMMARY.undoed;
+  b.textContent = SUMMARY.undoed ? 'ยกเลิกผลนับแล้ว' : 'Undo · เปิดให้นับใหม่';
+}
+
+function loadUndoRole(){
+  if (!window.StockAuth || !StockAuth.me) return;
+  StockAuth.me().then(me => {
+    IS_ADMIN = !!(me && String(me.role || '').toUpperCase() === 'ADMIN');
+    showUndoButton();
+  }).catch(() => {});
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  loadUndoRole();
+  if (!(window.StockAPI && StockAPI.fresh && StockAPI.mine)) {
+    google.script.run.withSuccessHandler(boot).withFailureHandler(fail).getBootstrapData();
+    google.script.run.withSuccessHandler(fillItems).withFailureHandler(fail).countListItems();
+    return;
+  }
+  let booted = false;
+  StockAPI.fresh(StockAPI.mine('countboot'), 'getBootstrapData', [], d => {
+    if (booted && TOUCHED) paintProgress(d.progress); else boot(d);
+    booted = true;
+  }, (e, had) => { if (!had) fail(e); });
+  StockAPI.fresh(StockAPI.mine('countitems'), 'countListItems', [], fillItems, (e, had) => { if (!had) fail(e); });
+});
+function fillItemsSaved(list){
+  if (window.StockAPI && StockAPI.remember && StockAPI.mine) StockAPI.remember(StockAPI.mine('countitems'), list);
+  fillItems(list);
+}
+
+function boot(d){
+  $('orgName').textContent = d.orgName;
+  fillSelect($('status'), d.statusOptions, 'เลือกสถานะ');
+  fillSelect($('condition'), d.conditionOptions, 'ไม่ระบุ');
+  if (d.user) $('counter').value = d.user.split('@')[0];
+  paintProgress(d.progress);
+}
+
+function fillSelect(sel, arr, placeholder){
+  sel.innerHTML = '<option value="">' + placeholder + '</option>' +
+    arr.map(v => '<option value="' + v + '">' + v + '</option>').join('');
+}
+
+function fillItems(list){
+  ITEMS = list || [];
+  $('itemList').innerHTML = ITEMS.map(it =>
+    '<option value="' + it.code + '">' + it.code + ' — ' + it.name +
+    (it.counted !== null ? '  (นับแล้ว ' + it.counted + ')' : '') + '</option>'
+  ).join('');
+}
+
+function paintProgress(p){
+  if (!p) return;
+  $('progBar').style.width = p.percent + '%';
+  $('progText').textContent =
+    'นับแล้ว ' + p.done + ' จาก ' + p.total + ' รายการ · เหลือ ' + p.pending + ' · ' + p.percent + '%';
+}
+
+// ───────── เลือกรายการ ─────────
+$('codeInput').addEventListener('change', onPick);
+$('codeInput').addEventListener('blur', onPick);
+
+function onPick(){
+  const raw = $('codeInput').value.trim();
+  if (!raw) return;
+  const code = raw.split('—')[0].trim();
+  const hit = ITEMS.find(i => i.code.toLowerCase() === code.toLowerCase());
+  if (!hit) return;
+  if (CURRENT && CURRENT.code === hit.code) return;
+
+  $('saveHint').textContent = 'กำลังดึงข้อมูล…';
+  google.script.run.withSuccessHandler(showItem).withFailureHandler(fail).getItem(hit.code);
+}
+
+function showItem(it){
+  CURRENT = it;
+  $('saveHint').textContent = '';
+  $('codeInput').value = it.code;
+
+  $('iiCode').textContent  = it.code;
+  $('iiName').textContent   = it.name || '-';
+  $('iiCat').textContent    = it.mainCat || '-';
+  $('iiSize').textContent   = it.size || '-';
+  $('iiPhoto').textContent  = it.photo || '-';
+  $('itemInfo').style.display = '';
+  loadItemPreview(it.code, it.name);
+
+  $('qtyOld').value = it.qtyOld;
+  $('qtyNew').value = it.qtyNew === null ? '' : it.qtyNew;
+  $('onShelf').value   = it.onShelf || '';
+  $('condition').value = it.condition || '';
+  $('location').value  = it.location || '';
+  $('note').value = '';
+  $('countCard').style.display = '';
+  calcDiff();
+  $('qtyNew').focus();
+}
+
+function clearItemPreview(message){
+  const box = $('itemPreview'), img = $('itemPreviewImg'), text = $('itemPreviewText');
+  if (!box || !img || !text) return;
+  img.removeAttribute('src');
+  img.alt = '';
+  img.style.display = 'none';
+  text.textContent = message || 'ยังไม่มีรูปของรายการนี้';
+  text.style.display = '';
+  box.classList.add('is-empty');
+}
+
+function loadItemPreview(code, name){
+  const requested = String(code || '').trim();
+  clearItemPreview('กำลังโหลดรูป…');
+  if (!requested) return;
+  google.script.run.withSuccessHandler(function (arr) {
+    if (!CURRENT || CURRENT.code !== requested) return;
+    const url = Array.isArray(arr) && typeof arr[0] === 'string' ? arr[0] : '';
+    if (url.indexOf('data:image/') !== 0) {
+      clearItemPreview('ยังไม่มีรูปของรายการนี้');
+      return;
+    }
+    const box = $('itemPreview'), img = $('itemPreviewImg'), text = $('itemPreviewText');
+    img.src = url;
+    img.alt = (name || requested) + ' · ' + requested;
+    img.style.display = 'block';
+    text.style.display = 'none';
+    box.classList.remove('is-empty');
+  }).withFailureHandler(function () {
+    if (CURRENT && CURRENT.code === requested) clearItemPreview('โหลดรูปไม่สำเร็จ ลองเลือกใหม่อีกครั้ง');
+  }).stockPhotoSet(requested);
+}
+
+// ───────── คำนวณส่วนต่างสดๆ ─────────
+$('qtyNew').addEventListener('input', calcDiff);
+
+function calcDiff(){
+  const box = $('diffBox'), val = $('diffVal');
+  box.classList.remove('diff-zero','diff-plus','diff-minus');
+
+  if (!CURRENT || $('qtyNew').value === ''){
+    val.textContent = '—'; box.classList.add('diff-zero');
+    $('noteReq').style.display = 'none';
+    return;
+  }
+  const d = Number($('qtyNew').value) - Number(CURRENT.qtyOld);
+  if (d === 0){
+    val.textContent = 'ตรงกัน'; box.classList.add('diff-zero');
+    $('noteReq').style.display = 'none';
+  } else if (d > 0){
+    val.textContent = 'เกิน +' + d; box.classList.add('diff-plus');
+    $('noteReq').style.display = '';
+  } else {
+    val.textContent = 'ขาด ' + d; box.classList.add('diff-minus');
+    $('noteReq').style.display = '';
+  }
+}
+
+// ───────── บันทึก ─────────
+$('btnSave').addEventListener('click', () => {
+  if (!CURRENT){ return showErr('กรุณาเลือกรายการก่อน'); }
+  hideErr();
+  $('btnSave').disabled = true;
+  $('saveHint').textContent = 'กำลังบันทึกลงชีต…';
+
+  google.script.run
+    .withSuccessHandler(onSaved)
+    .withFailureHandler(e => { $('btnSave').disabled = false; $('saveHint').textContent=''; showErr(e.message); })
+    .saveRecon({
+      code:       CURRENT.code,
+      countedQty: $('qtyNew').value,
+      status:     $('status').value,
+      onShelf:    $('onShelf').value,
+      location:   $('location').value,
+      condition:  $('condition').value,
+      counter:    $('counter').value,
+      note:       $('note').value
+    });
+});
+
+function onSaved(r){
+  SUMMARY = r;
+  $('sumTitle').textContent = 'บันทึกเรียบร้อย';
+  $('undoNotice').classList.add('d-none');
+  $('summaryHint').textContent = 'พิมพ์เก็บเป็นหลักฐานออฟไลน์ ข้อมูลถูกบันทึกลงแท็บ ทะเบียนพัสดุ และแท็บ RECON_LOG เรียบร้อยแล้ว';
+  $('btnUndo').textContent = 'Undo · เปิดให้นับใหม่';
+  $('btnSave').disabled = false;
+  $('saveHint').textContent = '';
+
+  $('sRecon').textContent  = r.reconId;
+  $('sWhen').textContent   = r.savedAt;
+  $('sItem').textContent   = r.code + ' — ' + r.name;
+  $('sCat').textContent    = r.mainCat || '-';
+  $('sOld').textContent    = r.qtyOld;
+  $('sNew').textContent    = r.counted;
+  $('sDiff').textContent   = r.diffLabel + (r.diff !== 0 ? ' (' + (r.diff>0?'+':'') + r.diff + ')' : '');
+  $('sStatus').textContent = r.status;
+  $('sLoc').textContent    = r.onShelf + ' · ' + r.location;
+  $('sCond').textContent   = r.condition;
+  $('sCounter').textContent= r.counter + (r.recorder !== '-' ? ' (' + r.recorder + ')' : '');
+  $('sNote').textContent   = r.note;
+  $('sumBadge').textContent= 'เลขที่ ' + r.reconId;
+
+  $('viewForm').style.display = 'none';
+  $('viewSummary').style.display = '';
+  paintProgress(r.progress);
+  showUndoButton();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ───────── พิมพ์ — Offline Record ─────────
+$('btnUndo').addEventListener('click', () => {
+  if (!IS_ADMIN || !SUMMARY || SUMMARY.undoed) return;
+  const reconId = SUMMARY.reconId;
+  const label = SUMMARY.code + ' — ' + SUMMARY.name;
+  if (!window.confirm('ยืนยัน Undo รายการ ' + reconId + '\n' + label + '\n\nระบบจะไม่ลบประวัติเดิม แต่จะเปิดรายการกลับให้นับใหม่')) return;
+  const b = $('btnUndo');
+  b.disabled = true;
+  b.textContent = 'กำลังเปิดให้นับใหม่…';
+  google.script.run
+    .withSuccessHandler(r => {
+      SUMMARY.undoed = true;
+      $('sumTitle').textContent = 'ยกเลิกผลการตรวจนับเรียบร้อยแล้ว';
+      $('sStatus').textContent = 'ยกเลิกผลนับ · เปิดให้นับใหม่';
+      $('sumBadge').textContent = 'ยกเลิกผลนับ';
+      $('undoNotice').textContent =
+        'รายการ ' + SUMMARY.code + ' — ' + SUMMARY.name +
+        ' ถูกเปิดให้ตรวจนับใหม่แล้ว ประวัติการตรวจนับเดิมยังคงจัดเก็บไว้ในระบบและไม่ได้ถูกลบ';
+      $('undoNotice').classList.remove('d-none');
+      $('summaryHint').textContent = 'ระบบได้บันทึกการยกเลิกผลนับแล้ว สามารถเลือก “นับรายการต่อไป” เพื่อดำเนินการต่อ';
+      $('btnPrint').disabled = true;
+      showUndoButton();
+      if (r.progress) paintProgress(r.progress);
+      google.script.run.withSuccessHandler(fillItemsSaved).withFailureHandler(fail).countListItems();
+    })
+    .withFailureHandler(e => {
+      b.disabled = false;
+      b.textContent = 'Undo · เปิดให้นับใหม่';
+      showErr(e && e.message ? e.message : e);
+    })
+    .undoRecon({ reconId: reconId, reason: 'ADMIN เปิดให้นับใหม่จากหน้าสรุป' });
+});
+
+$('btnPrint').addEventListener('click', () => {
+  if (!SUMMARY || SUMMARY.undoed) return;
+  $('btnPrint').disabled = true;
+  google.script.run
+    .withSuccessHandler(html => {
+      const printRoot = $('printArea');
+      printRoot.innerHTML = html;
+
+      // ใช้หัวกระดาษชุดเดียวกับใบเบิก/ใบจ่าย: ชื่อหน่วยงานชิดขวาและโลโก้ (ถ้ามี) อยู่ในบล็อกเดียวกัน
+      printRoot.querySelectorAll('.ph .org').forEach(el => el.remove());   // ใช้หัวกระดาษจากค่าตั้งด้านล่างแทน
+      const pe = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+      const countHead = document.createElement('div');
+      countHead.className = 'count-pr-lh';
+      countHead.innerHTML =
+        '<div class="count-pr-names">' +
+          '<div class="count-pr-th">' + pe(BRAND.formH1) +
+            (BRAND.formH2 ? '<span class="count-pr-en">' + pe(BRAND.formH2) + '</span>' : '') +
+            (BRAND.formH3 ? '<span class="count-pr-en">' + pe(BRAND.formH3) + '</span>' : '') +
+          '</div>' +
+        '</div>' +
+        (window.BRAND && BRAND.logo ? '<img class="count-pr-seal" alt="" src="' + BRAND.logo + '">' : '');
+      printRoot.prepend(countHead);
+
+      $('btnPrint').disabled = false;
+      window.print();
+    })
+    .withFailureHandler(e => { $('btnPrint').disabled = false; showErr(e.message); })
+    .getPrintHtml(Object.assign({}, SUMMARY, {                       // หัวเอกสาร/ช่องลงนามจาก config.js (FORMS.COUNT)
+      formTitle: (BRAND.form.COUNT || {}).TITLE, formSigns: (BRAND.form.COUNT || {}).SIGNS, formFoot: BRAND.form.FOOTER || '' }));
+});
+
+// ───────── ปุ่มอื่น ─────────
+$('btnNext').addEventListener('click', resetAll);
+$('btnReset').addEventListener('click', resetAll);
+
+function resetAll(){
+  CURRENT = null; SUMMARY = null;
+  $('codeInput').value = ''; $('qtyNew').value = ''; $('note').value = '';
+  $('status').value = ''; $('onShelf').value = ''; $('condition').value = ''; $('location').value = '';
+  $('itemInfo').style.display = 'none';
+  $('countCard').style.display = 'none';
+  $('viewSummary').style.display = 'none';
+  $('viewForm').style.display = '';
+  $('printArea').innerHTML = '';
+  hideErr(); calcDiff();
+  google.script.run.withSuccessHandler(fillItemsSaved).countListItems();
+  google.script.run.withSuccessHandler(paintProgress).getProgress();
+  $('codeInput').focus();
+}
+
+function showErr(m){ $('errBox').textContent = m; $('errBox').style.display = ''; }
+function hideErr(){ $('errBox').style.display = 'none'; }
+function fail(e){ showErr('เกิดข้อผิดพลาด: ' + e.message); }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+/* ───── ค้นหาทีละชั้น แก้สีได้ที่ตัวแปรชุดนี้ ───── */
+.facet{--fc-line:#D8E4EC;--fc-ocean:#1B7FA8;--fc-oceantx:#176887;--fc-sky:#EAF6FC;
+  --fc-soft:#5B7183;--fc-warnbg:#FFF3C4;--fc-warnln:#EBDAA3;--fc-warntx:#946202;
+  --fc-goodbg:#E6F4EC;--fc-goodln:#C6E3D4;--fc-goodtx:#1E6B4F;margin-top:14px}
+.facet .fc-crumbs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.facet .fc-crumb{display:inline-flex;align-items:center;gap:6px;background:#fff;
+  border:1px solid var(--fc-line);border-radius:99px;padding:4px 6px 4px 11px;font-size:.82rem}
+.facet .fc-crumb small{color:var(--fc-soft)}
+.facet .fc-crumb button{border:0;background:var(--fc-line);border-radius:50%;
+  width:19px;height:19px;line-height:1;cursor:pointer;font-size:.78rem;padding:0}
+.facet .fc-ask{font-weight:600;margin:0 0 2px}
+.facet .fc-hint{font-size:.8rem;color:var(--fc-soft);margin:0 0 9px}
+.facet .fc-opts{display:flex;flex-direction:column;gap:7px}
+.facet .fc-opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:#fff;border:1px solid var(--fc-line);border-radius:10px;padding:12px 13px;
+  cursor:pointer;font-size:.97rem;font-family:inherit}
+.facet .fc-opt:hover{border-color:var(--fc-ocean)}
+.facet .fc-opt .fv{flex:1;min-width:0;font-weight:500}
+.facet .fc-opt .fn{font-size:.76rem;color:var(--fc-soft);white-space:nowrap}
+.facet .fc-opt .fg{color:var(--fc-ocean)}
+.facet .fc-opt.fc-vague{background:var(--fc-warnbg);border-color:var(--fc-warnln)}
+.facet .fc-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  background:#fff;border:1px solid var(--fc-line);border-radius:10px;padding:12px 13px;
+  cursor:pointer;font-family:inherit;margin-bottom:7px}
+.facet .fc-item:hover{border-color:var(--fc-ocean)}
+.facet .fc-item .fi{flex:1;min-width:0}
+.facet .fc-item .fcode{font-weight:600;color:var(--fc-oceantx);font-size:.85rem}
+.facet .fc-item .fname{font-size:.9rem;word-break:break-word}
+.facet .fc-bal{font-size:.76rem;padding:3px 9px;border-radius:99px;white-space:nowrap;
+  background:var(--fc-goodbg);border:1px solid var(--fc-goodln);color:var(--fc-goodtx);font-weight:600}
+.facet .fc-done{background:var(--fc-sky);border-color:var(--fc-line);color:var(--fc-soft);font-weight:400}
+.facet .fc-reset{display:block;width:100%;margin-top:12px;padding:10px;border-radius:9px;
+  background:transparent;border:1px solid var(--fc-line);color:var(--fc-soft);
+  font-size:.86rem;cursor:pointer;font-family:inherit}
+.facet .fc-note{background:var(--fc-warnbg);border-left:3px solid var(--fc-warntx);
+  border-radius:0 7px 7px 0;padding:9px 12px;font-size:.8rem;color:var(--fc-warntx);margin-bottom:10px}
+</style>
+<script>
+(function(){
+  var F = document.getElementById('facet');
+  if (!F) return;
+  var ALL = [], picked = {};
+  var LAD = [
+    { k:'cat', label:'หมวด',    ask:'เลือกหมวดหลัก' },
+    { k:'sub', label:'ประเภท',  ask:'เป็นของประเภทไหน' },
+    { k:'f',   label:'แบบ',     ask:'แบบไหน' },
+    { k:'e',   label:'งาน',     ask:'ของงานไหน' },
+    { k:'y',   label:'ปี',      ask:'ปีไหน' },
+    { k:'b',   label:'สี',      ask:'สีอะไร' },
+    { k:'cl',  label:'สีรอง',   ask:'สีรองอะไร' },
+    { k:'s',   label:'ขนาด',    ask:'ขนาดไหน' }
+  ];
+  var BLANK = '— ไม่ระบุ —';
+  function nf(v){ return (Number(v)||0).toLocaleString('th-TH'); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function pool(){
+    return ALL.filter(function(i){
+      for (var k in picked) { if (((i[k]||'')||BLANK) !== picked[k]) return false; }
+      return true;
+    });
+  }
+  function nextStep(list){
+    for (var s=0; s<LAD.length; s++){
+      var st = LAD[s];
+      if (picked.hasOwnProperty(st.k)) continue;
+      var map = {};
+      list.forEach(function(i){
+        var val = (i[st.k]||'')||BLANK;
+        if(!map[val]) map[val] = {v:val,n:0,q:0};
+        map[val].n++; map[val].q += (i.old||0);
+      });
+      var o = Object.keys(map).map(function(k){ return map[k]; });
+      if (o.length <= 1){ if(o.length===1) picked[st.k]=o[0].v; continue; }
+      o.sort(function(a,b){ if(a.v===BLANK) return 1; if(b.v===BLANK) return -1; return b.n-a.n; });
+      return { step: st, opts: o };
+    }
+    return null;
+  }
+  function draw(){
+    var list = pool();
+    var crumbs = LAD.filter(function(s){ return picked.hasOwnProperty(s.k); }).map(function(s){
+      return '<span class="fc-crumb"><small>'+esc(s.label)+'</small> <b>'+esc(picked[s.k])+
+             '</b><button type="button" data-drop="'+s.k+'">&times;</button></span>';
+    }).join('');
+    var html = '<div class="fc-crumbs">'+crumbs+'</div>';
+    if (!list.length){
+      html += '<p class="fc-hint">ไม่เจอรายการที่ตรงเงื่อนไขนี้</p>';
+    } else {
+      var nx = (list.length > 6) ? nextStep(list) : null;
+      if (nx){
+        var vague = nx.opts.filter(function(o){ return o.v===BLANK||o.v==='ไม่ทราบ'; }).length;
+        html += '<p class="fc-ask">'+esc(nx.step.ask)+'</p>'+
+          '<p class="fc-hint">เหลือ '+nf(list.length)+' รายการ</p>'+
+          (vague ? '<p class="fc-note">ช่องพื้นเหลืองคือของที่ยังไม่มีข้อมูลช่องนี้ ไม่ใช่ว่าไม่มีของ</p>' : '')+
+          '<div class="fc-opts">'+nx.opts.map(function(o){
+            return '<button type="button" class="fc-opt'+((o.v===BLANK||o.v==='ไม่ทราบ')?' fc-vague':'')+
+              '" data-k="'+esc(nx.step.k)+'" data-v="'+esc(o.v)+'">'+
+              '<span class="fv">'+esc(o.v)+'</span>'+
+              '<span class="fn">'+nf(o.n)+' รายการ · '+nf(o.q)+' ชิ้น</span>'+
+              '<span class="fg">&rsaquo;</span></button>';
+          }).join('')+'</div>';
+      } else {
+        html += '<p class="fc-ask">'+nf(list.length)+' รายการ</p>'+
+          '<p class="fc-hint">กดเลือกรายการที่จะตรวจนับ</p>'+
+          list.slice(0,60).map(function(i){
+            return '<button type="button" class="fc-item" data-code="'+esc(i.c)+'">'+
+              '<span class="fi"><span class="fcode">'+esc(i.c)+'</span><br>'+
+              '<span class="fname">'+esc(i.n)+'</span></span>'+
+              '<span class="fc-bal'+(i.done?' fc-done':'')+'">'+
+              (i.done ? 'นับแล้ว '+nf(i.now) : 'ยอดในระบบ '+nf(i.old))+'</span></button>';
+          }).join('');
+      }
+    }
+    html += '<button type="button" class="fc-reset">เริ่มเลือกใหม่</button>';
+    F.innerHTML = html;
+
+    F.querySelectorAll('.fc-opt').forEach(function(b){
+      b.onclick = function(){ picked[b.dataset.k] = b.dataset.v; draw(); };
+    });
+    F.querySelectorAll('[data-drop]').forEach(function(b){
+      b.onclick = function(){ var hit=false;
+        LAD.forEach(function(s){ if(s.k===b.dataset.drop) hit=true; if(hit) delete picked[s.k]; });
+        draw(); };
+    });
+    F.querySelectorAll('.fc-item').forEach(function(b){
+      b.onclick = function(){
+        var el = document.getElementById('codeInput');
+        if (el) el.value = b.dataset.code;
+        var h = document.getElementById('saveHint');
+        if (h) h.textContent = 'กำลังดึงข้อมูล…';
+        google.script.run.withSuccessHandler(function(d){
+          if (typeof showItem === 'function') showItem(d);
+        }).withFailureHandler(function(e){
+          if (h) h.textContent = 'ดึงข้อมูลไม่สำเร็จ ' + (e && e.message ? e.message : e);
+        }).getItem(b.dataset.code);
+      };
+    });
+    var rs = F.querySelector('.fc-reset');
+    if (rs) rs.onclick = function(){ picked = {}; draw(); };
+  }
+
+  F.innerHTML = '<p class="fc-hint">กำลังโหลดรายการ…</p>';
+  var gotFacet = function(d){
+    ALL = (d && d.items) ? d.items : [];
+    if (!ALL.length){ F.innerHTML = '<p class="fc-hint">ยังไม่มีข้อมูลรายการ</p>'; return; }
+    draw();                                   // วาดใหม่ได้ ตัวเลือกที่กดไว้ (picked) ยังอยู่
+  };
+  var noFacet = function(e){
+    F.innerHTML = '<p class="fc-hint">โหลดรายการไม่สำเร็จ ' +
+      esc(e && e.message ? e.message : e) + '</p>';
+  };
+  // แสดงรายการที่จำไว้ในเครื่องทันที แล้วอัปเดตจากหลังบ้าน
+  if (window.StockAPI && StockAPI.fresh && StockAPI.mine)
+    StockAPI.fresh(StockAPI.mine('countfacet'), 'facetData', [], gotFacet, function(e, had){ if (!had) noFacet(e); });
+  else google.script.run.withSuccessHandler(gotFacet).withFailureHandler(noFacet).facetData();
+})();
+</script>
+<!-- ═══════════════════════════════════════════════════════════════
+     แถบทางลัด 5 กลุ่มตรวจนับ
+     วางบล็อกนี้ "ก่อน </body>" ต่อจากบล็อกช่องค้นหาทีละชั้นที่มีอยู่แล้ว
+     ไม่แก้โค้ดเดิมแม้แต่บรรทัดเดียว ถ้าหาปุ่มไม่เจอก็เงียบไป ไม่พัง
+     ═══════════════════════════════════════════════════════════════ -->
+<style>
+  .gbar{margin:14px 0 6px}
+  .gbar h4{margin:0 0 8px;font-size:14px;color:#334155;font-weight:700}
+  .gchips{display:flex;flex-wrap:wrap;gap:8px}
+  .gchip{border:1px solid #cbd5e1;background:#fff;border-radius:999px;
+         padding:7px 14px;font-size:13px;cursor:pointer;font-family:inherit;
+         color:#0f172a;line-height:1.4}
+  .gchip:hover{border-color:#1e3a8a;background:#f1f5f9}
+  .gchip.on{background:#1e3a8a;border-color:#1e3a8a;color:#fff}
+  .gchip small{opacity:.75;margin-left:6px}
+  .gchip.empty{opacity:.55;cursor:default}
+  .glist{margin-top:10px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden}
+  .glist button{display:flex;width:100%;justify-content:space-between;align-items:center;
+                gap:10px;text-align:left;border:0;border-top:1px solid #f1f5f9;
+                background:#fff;padding:11px 14px;cursor:pointer;font-family:inherit;font-size:14px}
+  .glist button:first-child{border-top:0}
+  .glist button:hover{background:#f8fafc}
+  .gcode{font-weight:700;color:#1e3a8a;font-size:13px}
+  .gname{flex:1;margin:0 10px;color:#0f172a}
+  .gbal{font-size:12px;background:#ecfdf5;color:#065f46;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .gbal.done{background:#eff6ff;color:#1d4ed8}
+  .gnote{margin-top:8px;font-size:13px;background:#fffbeb;border:1px solid #fde68a;
+         color:#78350f;border-radius:8px;padding:9px 12px}
+</style>
+<script>
+(function () {
+  var GROUPS = [];   // หมวดหลักที่มีในทะเบียน (คำนวณใน draw)
+
+  function pick(n, sub, cat) { return String(cat || '').trim(); }
+
+  var nf = function (x) { return (Number(x) || 0).toLocaleString('th-TH'); };
+  var host = document.getElementById('facet');
+  if (!host || !host.parentNode) return;              // ไม่มีช่องค้นหาทีละชั้น ก็ไม่ต้องทำอะไร
+
+  if (document.querySelector('.gbar')) return; var bar = document.createElement('div');
+  bar.className = 'gbar';
+  bar.innerHTML = '<h4>ชุดตรวจนับที่ใช้บ่อย</h4><div class="gchips"></div><div class="gbody"></div>';
+  host.parentNode.insertBefore(bar, host);
+
+  var chips = bar.querySelector('.gchips');
+  var body  = bar.querySelector('.gbody');
+  var all = [], open = '';
+
+  /** ส่งรหัสเข้าช่องค้นหาเดิม ไม่ยุ่งกับกลไกภายในของช่องค้นหาทีละชั้น */
+  function sendToSearch(code) {
+    var box = document.getElementById('codeInput');
+    if (!box) return;
+    box.value = code;
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    box.focus();
+    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function draw() {
+    var cnt = {};
+    all.forEach(function (i) { var g = pick(i.name, i.sub, i.cat); if (g) cnt[g] = (cnt[g] || 0) + 1; });
+    GROUPS = Object.keys(cnt).sort(function (a, b) { return cnt[b] - cnt[a]; }).slice(0, 8);
+    bar.style.display = GROUPS.length ? '' : 'none';
+    var tally = {};
+    GROUPS.forEach(function (g) { tally[g] = { items: [], pieces: 0, done: 0 }; });
+    all.forEach(function (i) {
+      var g = pick(i.name, i.sub, i.cat);
+      if (!g || !tally[g]) return;
+      tally[g].items.push(i);
+      tally[g].pieces += Number(i.old) || 0;
+      if (i.done) tally[g].done += 1;
+    });
+
+    chips.innerHTML = '';
+    GROUPS.forEach(function (g) {
+      var t = tally[g];
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'gchip' + (open === g ? ' on' : '') + (t.items.length ? '' : ' empty');
+      b.innerHTML = g + '<small>' + (t.items.length
+        ? t.items.length + ' รายการ · ' + nf(t.pieces) + ' ชิ้น'
+        : 'ยังไม่มีในทะเบียน') + '</small>';
+      if (t.items.length) b.onclick = function () { open = (open === g ? '' : g); render(tally); };
+      chips.appendChild(b);
+    });
+    render(tally);
+  }
+
+  function render(tally) {
+    body.innerHTML = '';
+    if (!open) return;
+    var t = tally[open];
+    var box = document.createElement('div');
+    box.className = 'glist';
+    t.items.forEach(function (i) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.innerHTML =
+        '<span class="gcode">' + i.code + '</span>' +
+        '<span class="gname">' + i.name + '</span>' +
+        '<span class="gbal' + (i.done ? ' done' : '') + '">' +
+          (i.done ? 'นับแล้ว ' + nf(i.now) : 'ยอดในระบบ ' + nf(i.old)) + '</span>';
+      b.onclick = function () { sendToSearch(i.code); };
+      box.appendChild(b);
+    });
+    body.appendChild(box);
+    if (t.done < t.items.length) {
+      var n = document.createElement('div');
+      n.className = 'gnote';
+      n.textContent = 'กลุ่มนี้ตรวจนับแล้ว ' + t.done + ' จาก ' + t.items.length +
+                      ' รายการ · เหลืออีก ' + (t.items.length - t.done) + ' รายการ';
+      body.appendChild(n);
+    }
+  }
+
+  google.script.run
+    .withSuccessHandler(function (d) { all = (d && d.items) || []; draw(); })
+    .withFailureHandler(function () { bar.style.display = 'none'; })
+    .facetData();
+})();
+</script>
+</body>
+</html>

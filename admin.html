@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>หน้าผู้ดูแลระบบ — {{APP}}</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--navy900:#122a52; --navy:#1d3f85; --navy600:#2451a8;
+--ink:#0f172a; --muted:#52607a; --line:#dfe5ee; --line2:#c3cdde;
+--ground:#f2f5f9; --card:#fff;
+--okbg:#e9f7f0; --okfg:#09614a;
+--infobg:#e9f0fd; --infofg:#1b4bb5;
+--warnbg:#fdf4e3; --warnline:#f0dcb4; --warnfg:#7a4a07;
+--retbg:#fdefe4; --retfg:#8a4312;
+--alert:#D1121C;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"IBM Plex Sans Thai",sans-serif;color:var(--ink);background:var(--ground)}
+a{color:var(--navy)} a:hover{color:var(--navy600)}
+.mono{font-family:'IBM Plex Mono',monospace}
+header.top{background:var(--navy900);color:#fff;padding:20px 28px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+header.sub{background:var(--navy900);color:#fff;padding:16px 28px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.back{color:#a9bcdc;background:none;border:0;cursor:pointer;display:inline-flex;align-items:center;min-height:44px;padding:0 6px 0 0;font-family:inherit}
+main{padding:28px;display:flex;flex-direction:column;gap:26px;max-width:1360px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.grid4{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.chg{font-size:14px;line-height:1.7;margin:0;padding-left:18px}
+.chg b{font-weight:600}
+.act{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:10px;min-height:168px;cursor:pointer;font-family:inherit;color:inherit}
+.act:hover{border-color:var(--navy)}
+.act .t{font-size:16px;font-weight:600}
+.act .d{font-size:13px;color:var(--muted);line-height:1.55}
+.act .f{margin-top:auto}
+.chip{font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap;display:inline-block}
+.c-ok{background:var(--okbg);color:var(--okfg)}
+.c-info{background:var(--infobg);color:var(--infofg)}
+.c-warn{background:var(--warnbg);color:var(--warnfg)}
+.c-ret{background:var(--retbg);color:var(--retfg)}
+label{font-size:13px;color:var(--muted)}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line2);border-radius:8px;padding:11px 13px;min-height:44px;width:100%}
+input[readonly]{background:var(--ground);color:var(--muted)}
+.f{display:flex;flex-direction:column;gap:6px}
+.btn{border:0;border-radius:8px;padding:13px 26px;font-size:15px;font-weight:600;font-family:inherit;min-height:44px;cursor:pointer;color:#fff;background:var(--navy)}
+.btn.ghost{background:#fff;color:var(--muted);border:1px solid var(--line2);font-weight:400}
+.btn.alert{background:var(--alert)}
+.btn[disabled]{opacity:.5;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{background:var(--ground);text-align:left;font-weight:600;color:var(--muted);padding:12px 16px}
+td{padding:13px 16px;border-top:1px solid #eef2f7}
+.scroll{overflow-x:auto}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.seg button{font-family:inherit;font-size:13px;padding:9px 14px;min-height:44px;border:0;cursor:pointer;white-space:nowrap;background:#fff;color:var(--muted)}
+.seg button.on{color:#fff;font-weight:600}
+.bar{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line2);padding:16px 28px;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between}
+.tabs{display:inline-flex;background:#fff;border:1px solid var(--line2);border-radius:10px;padding:4px;align-self:flex-start}
+.tabs button{font-family:inherit;font-size:14px;padding:10px 20px;min-height:44px;border:0;border-radius:7px;cursor:pointer;background:transparent;color:var(--muted)}
+.tabs button.on{background:var(--navy);color:#fff;font-weight:600}
+.hide{display:none!important}
+.note{font-size:13px;color:var(--muted);line-height:1.6}
+.alertbox{background:var(--warnbg);border:1px solid var(--warnline);border-radius:12px;padding:20px 24px;display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between}
+.pre{background:var(--navy900);border-radius:10px;padding:16px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:#d6e2f7;line-height:1.9}
+.pre s{color:#8ba7d6;text-decoration:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:24px;background:var(--navy900);color:#fff;padding:14px 22px;border-radius:10px;font-size:14px;z-index:50;max-width:92vw}
+@media (max-width:1100px){ .grid4{grid-template-columns:repeat(3,minmax(0,1fr))} }
+@media (max-width:900px){ .grid4{grid-template-columns:repeat(2,minmax(0,1fr))} .grid4 .act.last{grid-column:1 / -1;min-height:0} main{padding:20px 16px} header.top,header.sub,.bar{padding-left:16px;padding-right:16px} }
+@media (max-width:560px){ .grid4{grid-template-columns:1fr} .grid4 .act.last{grid-column:auto} }
+</style>
+</head>
+<body>
+
+<!-- ───── เข้าสู่ระบบ ───── -->
+<div id="gate" class="hide">
+<header class="top"><div><div style="font-size:14px;color:#a9bcdc">{{ORG}}</div>
+<div style="font-size:22px;font-weight:700">หน้าผู้ดูแลระบบ</div></div></header>
+<main style="max-width:420px">
+<div class="card" style="padding:24px;display:flex;flex-direction:column;gap:16px">
+<div class="f"><label for="gmail">อีเมล</label><input id="gmail" type="email" autocomplete="username"></div>
+<div class="f"><label for="gpin">รหัสผ่าน</label><input id="gpin" type="password" autocomplete="current-password"></div>
+<button class="btn" id="gbtn" type="button">เข้าสู่ระบบ</button>
+<div id="gerr" style="font-size:14px;color:var(--alert)"></div>
+</div>
+</main>
+</div>
+
+<!-- ───── หน้าหลัก ───── -->
+<div id="hub" class="hide">
+<header class="top">
+<div>
+<div style="font-size:20px;letter-spacing:.04em;color:#fff">{{ORG}}</div>
+<div style="font-size:24px;font-weight:700;margin-top:2px">ระบบคลังพัสดุ · หน้าผู้ดูแลระบบ</div>
+</div>
+<div style="display:flex;align-items:center;gap:12px">
+<div style="text-align:right">
+<div style="font-size:14px;font-weight:600" id="meName">—</div>
+<div style="font-size:12px;color:#a9bcdc" id="mePos">—</div>
+</div>
+<div style="width:40px;height:40px;border-radius:999px;background:var(--navy);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:15px" id="meIni">·</div>
+</div>
+</header>
+
+<main>
+<section>
+<h2 style="margin:0 0 4px;font-size:18px;font-weight:700">โปรดเลือกรายการที่ต้องการ</h2>
+
+<div class="grid4">
+<button class="act" type="button" data-go="add" data-tab="new">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d3f85" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+<div class="t">เพิ่มรายการใหม่</div>
+<div class="f mono" style="font-size:12px;color:var(--navy)">รหัสถัดไป <span id="nextCode">—</span></div>
+</button>
+
+<button class="act" type="button" data-go="add" data-tab="in">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#09614a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+<div class="t">รับของเข้า</div>
+<div class="f"><span class="chip c-ok" id="cntActive">—</span></div>
+</button>
+
+<button class="act" type="button" data-go="adjust">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1b4bb5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h12"/><path d="m13 5 3 3-3 3"/><path d="M20 16H8"/><path d="m11 13-3 3 3 3"/></svg>
+<div class="t">ปรับยอดให้เป็นปัจจุบัน</div>
+<div class="f"><span class="chip c-info">ลงเฉพาะส่วนต่าง</span></div>
+</button>
+
+<button class="act" type="button" data-go="retire" style="border-color:var(--line2);box-shadow:inset 3px 0 0 var(--retfg)">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#8a4312" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7h18"/><path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/><path d="M6 7v12a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7"/><path d="M10 11v5M14 11v5"/></svg>
+<div class="t">รายการคงค้าง (ไม่มีข้อมูล)</div>
+<div class="f"><span class="chip c-ret" id="cntRetire">—</span></div>
+</button>
+
+<button class="act last" type="button" data-go="edit">
+<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#1d3f85" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/></svg>
+<div class="t">แก้ไขรายละเอียดรายการ</div>
+<div class="f"><span class="chip c-info">ชื่อ · หมวด · ไซส์ · ที่เก็บ</span></div>
+</button>
+</div>
+</section>
+
+<section class="alertbox" id="oldBox">
+<div style="max-width:760px">
+<div style="font-size:16px;font-weight:600;color:var(--alert)">&nbsp; &nbsp;⚠️ ข้อความแจ้งเตือนถึงผู้ดูแลระบบ&nbsp;</div>
+<p style="margin:6px 0 0;font-size:14px;color:var(--alert);line-height:1.6" id="oldMsg">กำลังตรวจสอบรายการเก่า…</p>
+</div>
+<button class="btn alert" type="button" data-go="retire">จัดการทั้งชุด</button>
+</section>
+
+<section>
+<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+<h2 style="margin:0;font-size:18px;font-weight:700">การเคลื่อนไหวล่าสุด</h2>
+</div>
+<div class="card" style="overflow:hidden"><div class="scroll">
+<table style="min-width:760px"><thead><tr>
+<th>เวลา</th><th>รหัส</th><th>รายการ</th><th>ประเภท</th><th style="text-align:right">จำนวน</th><th>ผู้บันทึก</th>
+</tr></thead><tbody id="recent"></tbody></table>
+</div></div>
+</section>
+</main>
+</div>
+
+<!-- ───── เพิ่มของเข้าคลัง ───── -->
+<div id="add" class="hide">
+<header class="sub">
+<div style="display:flex;align-items:center;gap:14px">
+<button class="back" type="button" data-go="hub" aria-label="กลับหน้าหลัก"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+<div style="font-size:20px;font-weight:700">เพิ่มของเข้าคลัง</div>
+</div>
+</header>
+
+<main>
+<div class="tabs">
+<button type="button" id="tabNew" class="on">เพิ่มรายการใหม่</button>
+<button type="button" id="tabIn">รับของเข้า</button>
+</div>
+
+<div id="paneNew" style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<section class="card" style="flex:999 1 560px;min-width:0;padding:24px">
+<h2 style="margin:0 0 4px;font-size:16px;font-weight:700">ของชนิดที่ยังไม่เคยมีในทะเบียน</h2>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+<div class="f"><label for="nCode">รหัสรายการ</label><input id="nCode" type="text" readonly class="mono" style="color:var(--navy);font-weight:600"></div>
+<div class="f"><label for="nUnit">หน่วยนับ</label><select id="nUnit"></select></div>
+<div class="f" style="grid-column:1/-1"><label for="nName">ชื่อรายการ</label><input id="nName" type="text" placeholder="เช่น เครื่องพรินเตอร์ Ricoh IM C300 ห้องธุรการ"></div>
+<div class="f"><label for="nCat">หมวดหลัก</label><input id="nCat" type="text" list="nCatList" maxlength="80" placeholder="เลือกหรือพิมพ์หมวดใหม่"><datalist id="nCatList"></datalist></div>
+<div class="f"><label for="nSub">หมวดย่อย</label><input id="nSub" type="text" list="nSubList" maxlength="80" placeholder="ไม่บังคับ"><datalist id="nSubList"></datalist></div>
+<div class="f"><label for="nQty">จำนวนตั้งต้น</label><input id="nQty" type="number" min="0" value="1" class="mono"></div>
+<div class="f"><label for="nLoc">ที่เก็บ</label><input id="nLoc" type="text" list="nLocList" maxlength="120" placeholder="เลือกหรือพิมพ์ที่เก็บ"><datalist id="nLocList"></datalist></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:24px">
+<button class="btn" type="button" id="btnAdd">เพิ่มลงทะเบียน</button>
+<button class="btn ghost" type="button" data-go="hub">ยกเลิก</button>
+</div>
+</section>
+<aside style="display:none">
+<section class="card" style="padding:20px">
+<h2 style="margin:0 0 10px;font-size:15px;font-weight:700">สิ่งที่จะเกิดขึ้น</h2>
+<div style="font-size:13px;color:var(--muted);line-height:1.9">
+<div>เพิ่มแถวใหม่ท้ายทะเบียน</div>
+<div>ตั้งสถานะรายการเป็น ใช้งาน</div>
+<div>ลงรับเข้าจำนวนตั้งต้นในบัญชีเคลื่อนไหว</div>
+<div>ไม่แตะแถวเดิมสักแถว</div>
+</div>
+</section>
+</aside>
+</div>
+
+<div id="paneIn" class="hide" style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<section class="card" style="flex:999 1 560px;min-width:0;padding:24px">
+<h2 style="margin:0 0 4px;font-size:16px;font-weight:700">ของชนิดเดิมที่ซื้อเพิ่มหรือได้รับบริจาค</h2>
+<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px">
+<div class="f" style="grid-column:1/-1"><label for="rPick">เลือกรายการที่มีอยู่แล้ว</label>
+<input id="rPick" type="text" list="itemList" placeholder="พิมพ์รหัสหรือชื่อรายการ"><datalist id="itemList"></datalist></div>
+<div class="f"><label for="rNow">คงเหลือตอนนี้</label><input id="rNow" type="text" readonly class="mono" value="—"></div>
+<div class="f"><label for="rQty">จำนวนที่รับเข้า</label><input id="rQty" type="number" min="1" value="1" class="mono" style="border-color:var(--okfg)"></div>
+<div class="f"><label for="rSrc">ที่มา</label><select id="rSrc"></select></div>
+<div class="f"><label for="rDoc">เลขที่เอกสารอ้างอิง</label><input id="rDoc" type="text" placeholder="เช่น ใบส่งของ PO-2569-104"></div>
+<div class="f" style="grid-column:1/-1"><label for="rNote">หมายเหตุ</label><textarea id="rNote" rows="2" placeholder="ไม่จำเป็นต้องกรอก"></textarea></div>
+</div>
+<div style="margin-top:20px;background:var(--okbg);border:1px solid #c7e8db;border-radius:10px;padding:14px 18px;font-size:14px;color:var(--okfg)" id="rPreview">เลือกรายการก่อน</div>
+<div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:20px">
+  <button class="btn" type="button" id="btnRecv" style="background:var(--okfg)">บันทึกรับเข้า</button>
+  <button class="btn ghost" type="button" data-go="hub">ยกเลิก</button>
+  </div>
+  </section>
+  </div>
+  </main>
+  </div>
+  
+  <!-- ───── ปรับยอดให้เป็นปัจจุบัน ───── -->
+  <div id="adjust" class="hide">
+  <header class="sub">
+  <div style="display:flex;align-items:center;gap:14px">
+  <button class="back" type="button" data-go="hub" aria-label="กลับหน้าหลัก"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <div style="font-size:20px;font-weight:700">ปรับยอดให้เป็นปัจจุบัน</div>
+  </div>
+  </header>
+  
+  <main>
+  <div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+  <div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px">
+  <section class="card" style="padding:24px">
+  <h2 style="margin:0 0 18px;font-size:16px;font-weight:700">1 · เลือกรายการ</h2>
+  <div class="f" style="margin-bottom:18px"><label for="aPick">ค้นหาด้วยรหัสหรือชื่อรายการ</label>
+  <input id="aPick" type="text" list="itemList2" placeholder="พิมพ์รหัสหรือชื่อรายการ"><datalist id="itemList2"></datalist></div>
+  <div style="background:#f7faff;border:1px solid #dde6f5;border-radius:10px;padding:16px 18px;display:flex;flex-wrap:wrap;gap:24px" id="aInfo">
+  <div style="font-size:14px;color:var(--muted)">ยังไม่ได้เลือกรายการ</div>
+  </div>
+  </section>
+  
+  <section class="card" style="padding:24px">
+  <h2 style="margin:0 0 18px;font-size:16px;font-weight:700">2 · กรอกยอดที่นับได้จริง</h2>
+  <div style="display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end">
+  <div class="f" style="flex:1 1 180px"><label for="aSys">ยอดในระบบตอนนี้</label><input id="aSys" type="text" readonly class="mono" value="—"></div>
+  <div class="f" style="flex:1 1 180px"><label for="aReal">ยอดที่นับได้จริง</label><input id="aReal" type="number" min="0" class="mono" style="border-color:var(--navy)"></div>
+  <div style="flex:1 1 200px"><div id="aDiff" style="border-radius:10px;padding:12px 16px;background:var(--ground);color:var(--muted);min-height:44px">
+  <div style="font-size:12px">ส่วนต่างที่จะบันทึก</div><div style="font-size:26px;font-weight:700;margin-top:2px" class="mono">—</div></div></div>
+  </div>
+  <div class="f" style="margin-top:18px"><label for="aWhy">เหตุผล</label><select id="aWhy"></select></div>
+  <div class="f" style="margin-top:18px"><label for="aNote">หมายเหตุ</label><textarea id="aNote" rows="3" placeholder="เช่น ตัวหนีบด้านหลังหลุด 4 ตัว แยกไว้รอซ่อม"></textarea></div>
+  </section>
+  
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+  <button class="btn" type="button" id="btnAdj">บันทึกการปรับยอด</button>
+  <button class="btn ghost" type="button" data-go="hub">ยกเลิก</button>
+  </div>
+  </div>
+  
+  <aside style="display:none">
+  <section class="card" style="padding:20px">
+  <h2 style="margin:0 0 12px;font-size:15px;font-weight:700">ระบบจะบันทึกแบบนี้</h2>
+  <div class="pre" id="aPre">
+  <div><s>แท็บ</s> LEDGER_เคลื่อนไหว</div>
+  <div><s>รหัส</s> —</div>
+  <div><s>ประเภท</s> ปรับยอด</div>
+  <div><s>เข้า</s> 0 &nbsp; <s>ออก</s> 0</div>
+  <div><s>เหตุผล</s> —</div>
+  <div><s>ผู้บันทึก</s> <span id="aWho">—</span></div>
+  </div>
+  <p class="note" style="margin:12px 0 0">คอลัมน์ F จำนวนตั้งต้น และคอลัมน์ G ยอดยกมา ในทะเบียนไม่ถูกแตะ</p>
+  </section>
+  <section style="background:var(--warnbg);border:1px solid var(--warnline);border-radius:12px;padding:18px 20px">
+  <div style="font-size:14px;font-weight:600;color:var(--warnfg);margin-bottom:6px">กลับรายการได้</div>
+  <p style="margin:0;font-size:13px;color:var(--warnfg);line-height:1.65">ถ้าลงผิด ลงปรับยอดกลับทางได้ ระบบเก็บร่องรอยทั้งสองครั้ง ไม่ต้องเข้าไปแก้ในชีต</p>
+  </section>
+  </aside>
+  </div>
+  </main>
+  </div>
+  
+<!-- ───── แก้ไขรายละเอียดรายการ ───── -->
+<div id="edit" class="hide">
+<header class="sub">
+<div style="display:flex;align-items:center;gap:14px">
+<button class="back" type="button" data-go="hub" aria-label="กลับหน้าหลัก"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+<div style="font-size:20px;font-weight:700">แก้ไขรายละเอียดรายการ</div>
+</div>
+</header>
+
+<main>
+<div style="display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start">
+<div style="flex:999 1 560px;min-width:0;display:flex;flex-direction:column;gap:20px">
+<section class="card" style="padding:24px">
+<h2 style="margin:0 0 18px;font-size:16px;font-weight:700">1 · เลือกรายการ</h2>
+<div class="f"><label for="ePick">ค้นหาด้วยรหัสหรือชื่อรายการ</label>
+<input id="ePick" type="text" list="itemList3" placeholder="พิมพ์รหัสหรือชื่อรายการ"><datalist id="itemList3"></datalist></div>
+<p class="note" id="eInfo" style="margin:12px 0 0">ยังไม่ได้เลือกรายการ</p>
+</section>
+
+<section class="card" style="padding:24px" id="eForm">
+<h2 style="margin:0 0 18px;font-size:16px;font-weight:700">2 · แก้ไขข้อมูล</h2>
+<div style="display:flex;flex-direction:column;gap:16px">
+<div class="f"><label for="eName">ชื่อรายการ</label><input id="eName" type="text" maxlength="200"></div>
+<div class="f"><label for="eEn">ชื่อภาษาอังกฤษ</label><input id="eEn" type="text" maxlength="200" placeholder="แสดงเมื่อสลับเป็น English"></div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div class="f" style="flex:1 1 220px"><label for="eCat">หมวดหลัก</label><select id="eCat"></select></div>
+<div class="f" style="flex:1 1 220px"><label for="eSub">หมวดย่อย</label><input id="eSub" type="text" list="subList" maxlength="80"><datalist id="subList"></datalist></div>
+</div>
+<div style="display:flex;flex-wrap:wrap;gap:16px">
+<div class="f" style="flex:2 1 260px"><label for="eSize">ไซส์ / รายละเอียด</label><input id="eSize" type="text" maxlength="120"></div>
+<div class="f" style="flex:1 1 140px"><label for="eX">ขนาด (ไซส์)</label><input id="eX" type="text" maxlength="20" placeholder="เช่น M, XL, 38"></div>
+</div>
+<div class="f"><label for="eLoc">ที่เก็บ</label><input id="eLoc" type="text" list="locList" maxlength="120"><datalist id="locList"></datalist></div>
+<div class="f"><label for="eNote">หมายเหตุการแก้ไข</label><textarea id="eNote" rows="2" maxlength="300" placeholder="เช่น แก้ชื่อให้ตรงป้ายบนกล่อง"></textarea></div>
+</div>
+</section>
+
+<div style="display:flex;flex-wrap:wrap;gap:12px">
+<button class="btn" type="button" id="btnEdit" disabled>บันทึกการแก้ไข</button>
+<button class="btn ghost" type="button" data-go="hub">ยกเลิก</button>
+</div>
+</div>
+
+<aside style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:16px">
+<section class="card" style="padding:20px">
+<h2 style="margin:0 0 12px;font-size:15px;font-weight:700">สิ่งที่จะเปลี่ยน</h2>
+<ul class="chg" id="eChg"><li style="color:var(--muted);list-style:none;margin-left:-18px">ยังไม่มีการแก้ไข</li></ul>
+</section>
+<section style="background:var(--infobg);border:1px solid #c9d8f5;border-radius:12px;padding:18px 20px">
+<div style="font-size:14px;font-weight:600;color:var(--infofg);margin-bottom:6px">ยอดคงเหลือไม่เปลี่ยน</div>
+<p style="margin:0;font-size:13px;color:var(--infofg);line-height:1.65">แก้เฉพาะคำอธิบายของรายการ รหัส ยอดคงเหลือ และคอลัมน์ G ยอดยกมา ไม่ถูกแตะ ระบบเก็บค่าเดิมกับค่าใหม่ไว้ในแท็บ STATUS_LOG</p>
+</section>
+</aside>
+</div>
+</main>
+</div>
+
+<!-- ───── รายการคงค้าง ───── -->
+  <div id="retire" class="hide">
+  <header class="sub">
+  <div style="display:flex;align-items:center;gap:14px">
+  <button class="back" type="button" data-go="hub" aria-label="กลับหน้าหลัก"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <div style="font-size:20px;font-weight:700">รายการคงค้างไม่มีข้อมูล</div>
+  </div>
+  </header>
+  
+  <main style="padding-bottom:40px">
+  <div class="card" style="padding:16px 20px;display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end">
+  <div class="f" style="width:160px"><label for="fYear">ปีของงาน</label><select id="fYear"></select></div>
+  <div class="f" style="width:220px"><label for="fCat">หมวดหลัก</label><select id="fCat"></select></div>
+  <div class="f" style="width:160px"><label for="fStatus">สถานะรายการ</label><select id="fStatus">
+  <option>ใช้งาน</option><option>เลิกใช้</option><option>รอจำหน่าย</option><option>ทั้งหมด</option></select></div>
+  <div class="f" style="flex:1;min-width:180px"><label for="fQ">ค้นหา</label><input id="fQ" type="text" placeholder="พิมพ์รหัสหรือชื่อรายการ"></div>
+  <div style="font-size:14px;color:var(--muted);padding-bottom:12px;white-space:nowrap" id="fCount">—</div>
+  </div>
+  
+  <div class="card" style="overflow:hidden;margin-top:18px"><div class="scroll">
+  <table style="min-width:980px"><thead><tr>
+  <th style="width:44px"><input type="checkbox" id="chkAll" aria-label="เลือกทุกรายการที่แสดง" style="width:18px;height:18px;min-height:18px;padding:0"></th>
+  <th>รหัส</th><th>ชื่อรายการ</th><th>ปี</th><th style="text-align:right">คงเหลือ</th><th>ยอดที่เหลือจะทำอย่างไร</th>
+  </tr></thead><tbody id="rows"></tbody></table>
+  </div>
+  <div style="padding:14px 20px;border-top:1px solid #eef2f7;font-size:13px;color:var(--muted)" id="shown">—</div></div>
+  
+  <p class="note" style="margin:16px 0 0;max-width:860px">
+  <strong style="color:var(--ink);font-weight:600">เก็บยอดไว้</strong> สำหรับของที่ยังกองอยู่ในคลังแต่ไม่แจกแล้ว ยอดคงเหลือไม่เปลี่ยน ·
+  <strong style="color:var(--ink);font-weight:600">ตัดเหลือ 0</strong> สำหรับของที่แจกหมดไปแล้ว ระบบลงตัดจำหน่ายเท่ากับยอดคงเหลือให้ พร้อมเหตุผลและชื่อผู้ทำ
+  </p>
+  </main>
+  
+  <div class="bar">
+  <div>
+  <div style="font-size:15px;font-weight:600" id="selLine">เลือกไว้ 0 รายการ · 0 ชิ้น</div>
+  <div style="font-size:13px;color:var(--muted);margin-top:2px" id="selSplit">เก็บยอดไว้ 0 รายการ · ตัดเหลือ 0 จำนวน 0 รายการ รวม 0 ชิ้น</div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center">
+  <label for="rReason" style="font-size:14px">เหตุผล</label>
+  <select id="rReason" style="min-width:220px;width:auto"></select>
+  <button class="btn ghost" type="button" id="btnClear">ล้างที่เลือก</button>
+  <button class="btn" type="button" id="btnReopen" style="background:var(--muted)">เปิดใช้งานอีกครั้ง</button>
+  <button class="btn" type="button" id="btnRetire" style="background:var(--retfg)">ปิดรายการที่เลือก</button>
+  </div>
+  </div>
+  </div>
+  
+  <script>
+  var TOK = null, D = null, SEL = {}, MODE = {};
+  var $ = function (id) { return document.getElementById(id); };
+  var nf = function (n) { return (Number(n) || 0).toLocaleString('th-TH'); };
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+  return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+  
+  function toast(msg, bad) {
+  var t = document.createElement('div');
+  t.className = 'toast';
+  if (bad) t.style.background = '#D1121C';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function () { t.remove(); }, 5200);
+  }
+  function show(id) {
+  ['gate', 'hub', 'add', 'adjust', 'retire', 'edit'].forEach(function (v) { $(v).classList.add('hide'); });
+  $(id).classList.remove('hide');
+  window.scrollTo(0, 0);
+  }
+  function fill(sel, arr, first) {
+  if (sel.tagName === 'DATALIST') { sel.innerHTML = (arr || []).map(function (v) { return '<option value="' + esc(v) + '">'; }).join(''); return; }
+  var h = first ? '<option>' + esc(first) + '</option>' : '';
+  (arr || []).forEach(function (v) { h += '<option>' + esc(v) + '</option>'; });
+  sel.innerHTML = h;
+  }
+  function itemBy(txt) {
+  var code = String(txt || '').split(' ')[0].trim().toUpperCase();
+  for (var i = 0; i < D.items.length; i++) if (D.items[i].code.toUpperCase() === code) return D.items[i];
+  return null;
+  }
+  
+  // ── เข้าสู่ระบบ ──
+  function boot() {
+  google.script.run
+  .withSuccessHandler(ready)
+  .withFailureHandler(function (e) {
+  var m = String(e && e.message || e);
+  if (/ยืนยันตัวตน|ล็อกอิน/.test(m)) { show('gate'); }
+  else { show('gate'); $('gerr').textContent = m; }
+  })
+  .adminBoot(TOK);
+  }
+  $('gbtn').onclick = function () {
+  var b = $('gbtn'); b.disabled = true; $('gerr').textContent = '';
+  google.script.run
+  .withSuccessHandler(function (r) { TOK = r.token; b.disabled = false; boot(); })
+  .withFailureHandler(function (e) { b.disabled = false; $('gerr').textContent = String(e && e.message || e); })
+  .login($('gmail').value.trim(), $('gpin').value);
+  };
+  
+  // ── โหลดข้อมูลเสร็จ ──
+  function ready(d) {
+  D = d;
+  $('meName').textContent = d.me.name;
+  $('mePos').textContent  = d.me.position || d.me.role;
+  $('meIni').textContent  = (d.me.name || '?').charAt(0).toUpperCase();
+  $('aWho').textContent   = d.me.email;
+  $('nextCode').textContent = d.nextCode;
+  $('nCode').value = d.nextCode;
+  $('cntActive').textContent = 'ใช้งานอยู่ ' + nf(d.counts.active) + ' รายการ';
+  $('cntRetire').textContent = 'เลิกใช้แล้ว ' + nf(d.counts.retired) + ' รายการ';
+  
+  fill($('nUnit'), d.units);
+  fill($('nCatList'), d.cats);
+  fill($('nSubList'), d.subs);
+  fill($('nLocList'), d.locs);
+  fill($('rSrc'),  d.sources);
+  fill($('aWhy'),  d.adjustReasons);
+  fill($('rReason'), d.retireReasons);
+  fill($('fCat'),  d.cats, 'ทุกหมวด');
+  
+  var years = {};
+  d.items.forEach(function (i) { if (i.year) years[i.year] = 1; });
+  fill($('fYear'), Object.keys(years).sort(), 'ทุกปี');
+  
+  var dl = d.items.map(function (i) { return '<option value="' + esc(i.code + ' · ' + i.name) + '">'; }).join('');
+  $('itemList').innerHTML = dl;
+  $('itemList2').innerHTML = dl;
+  buildEditLists();
+  
+  var old = d.items.filter(function (i) {
+  return i.status === 'ใช้งาน' && i.year && Number(i.year) < new Date().getFullYear() - 1;
+  });
+  $('oldMsg').textContent = old.length
+  ? 'พบรายการที่ระบุปีเก่ากว่า 2 ปีที่ยังเปิดใช้งานอยู่จำนวน ' + nf(old.length) +
+  ' รายการ ซึ่งทำให้รายการเหล่านี้ยังคงแสดงอยู่ในหน้าเบิกจ่ายของพนักงาน'
+  : 'ยังไม่พบรายการที่ระบุปีเก่ากว่า 2 ปีและยังเปิดใช้งานอยู่';
+  
+  $('recent').innerHTML = (d.recent || []).map(function (r) {
+  var cls = r.kind === 'รับเข้า' || r.kind === 'คืนเข้า' ? 'c-ok'
+  : r.kind === 'ตัดจำหน่าย' ? 'c-ret'
+  : r.kind === 'ปรับยอด' || r.kind === 'ตรวจนับไม่พบ' ? 'c-warn' : 'c-info';
+  return '<tr><td style="color:var(--muted);white-space:nowrap">' + esc(r.time) + '</td>' +
+  '<td class="mono" style="color:var(--navy)">' + esc(r.code) + '</td>' +
+  '<td>' + esc(r.name) + '</td>' +
+  '<td><span class="chip ' + cls + '">' + esc(r.kind) + '</span></td>' +
+  '<td style="text-align:right" class="mono">' + esc(r.qty) + '</td>' +
+  '<td style="color:var(--muted)">' + esc(r.by) + '</td></tr>';
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">ยังไม่มีการเคลื่อนไหว</td></tr>';
+  
+  drawRows();
+  show('hub');
+  }
+  
+  // ── ไปหน้าต่างๆ ──
+  document.addEventListener('click', function (e) {
+  var b = e.target.closest('[data-go]');
+  if (!b) return;
+  var go = b.getAttribute('data-go');
+  if (go === 'add') setTab(b.getAttribute('data-tab') === 'in' ? 'in' : 'new');
+  show(go);
+  });
+  function setTab(t) {
+  $('tabNew').classList.toggle('on', t === 'new');
+  $('tabIn').classList.toggle('on', t === 'in');
+  $('paneNew').classList.toggle('hide', t !== 'new');
+  $('paneIn').classList.toggle('hide', t !== 'in');
+  }
+  $('tabNew').onclick = function () { setTab('new'); };
+  $('tabIn').onclick  = function () { setTab('in'); };
+  
+  // ── เพิ่มรายการใหม่ ──
+  $('btnAdd').onclick = function () {
+  var b = this; b.disabled = true;
+  google.script.run
+  .withSuccessHandler(function (r) {
+  b.disabled = false;
+  toast('เพิ่ม ' + r.code + ' เรียบร้อย คงเหลือ ' + nf(r.bal));
+  $('nName').value = ''; $('nQty').value = 1;
+  $('nCode').value = r.nextCode; $('nextCode').textContent = r.nextCode;
+  refresh();
+  })
+  .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+  .adminAddItem({ tok: TOK, name: $('nName').value, cat: $('nCat').value, sub: $('nSub').value,
+  unit: $('nUnit').value, loc: $('nLoc').value, qty: $('nQty').value });
+  };
+  
+  // ── รับของเข้า ──
+  $('rPick').oninput = function () {
+  var it = itemBy(this.value);
+  $('rNow').value = it ? nf(it.bal) : '—';
+  updRecv();
+  };
+  $('rQty').oninput = updRecv;
+  function updRecv() {
+  var it = itemBy($('rPick').value), q = Number($('rQty').value) || 0;
+  $('rPreview').textContent = it
+  ? 'หลังบันทึก คงเหลือจะเปลี่ยนจาก ' + nf(it.bal) + ' เป็น ' + nf(it.bal + q) + ' ชิ้น'
+  : 'เลือกรายการก่อน';
+  }
+  $('btnRecv').onclick = function () {
+  var it = itemBy($('rPick').value);
+  if (!it) { toast('ยังไม่ได้เลือกรายการ', true); return; }
+  var b = this; b.disabled = true;
+  google.script.run
+  .withSuccessHandler(function (r) {
+  b.disabled = false;
+  toast('รับเข้า ' + r.code + ' เรียบร้อย คงเหลือ ' + nf(r.bal));
+  $('rQty').value = 1; $('rDoc').value = ''; $('rNote').value = '';
+  refresh();
+  })
+  .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+  .adminReceive({ tok: TOK, code: it.code, qty: $('rQty').value, source: $('rSrc').value,
+  doc: $('rDoc').value, note: $('rNote').value });
+  };
+  
+  // ── ปรับยอด ──
+  $('aPick').oninput = function () {
+  var it = itemBy(this.value);
+  $('aInfo').innerHTML = it
+  ? '<div><div style="font-size:12px;color:var(--muted)">รหัส</div><div class="mono" style="font-size:15px;color:var(--navy);font-weight:600;margin-top:2px">' + esc(it.code) + '</div></div>' +
+  '<div><div style="font-size:12px;color:var(--muted)">หมวด</div><div style="font-size:15px;margin-top:2px">' + esc(it.cat + (it.sub ? ' · ' + it.sub : '')) + '</div></div>' +
+  '<div><div style="font-size:12px;color:var(--muted)">ที่เก็บ</div><div style="font-size:15px;margin-top:2px">' + esc(it.loc || '—') + '</div></div>'
+  : '<div style="font-size:14px;color:var(--muted)">ยังไม่ได้เลือกรายการ</div>';
+  $('aSys').value = it ? nf(it.bal) : '—';
+  updAdj();
+  };
+  $('aReal').oninput = updAdj;
+  $('aWhy').onchange = updAdj;
+  function updAdj() {
+  var it = itemBy($('aPick').value);
+  var box = $('aDiff');
+  if (!it || $('aReal').value === '') {
+  box.style.background = 'var(--ground)'; box.style.color = 'var(--muted)';
+  box.children[1].textContent = '—';
+  } else {
+  var d = (Number($('aReal').value) || 0) - it.bal;
+  box.style.background = d === 0 ? 'var(--ground)' : (d > 0 ? 'var(--okbg)' : 'var(--retbg)');
+  box.style.color      = d === 0 ? 'var(--muted)'  : (d > 0 ? 'var(--okfg)' : 'var(--retfg)');
+  box.children[1].textContent = d === 0 ? 'ตรงกัน' : (d > 0 ? '+' + d : String(d));
+  }
+  var d2 = it && $('aReal').value !== '' ? (Number($('aReal').value) || 0) - it.bal : 0;
+  $('aPre').innerHTML =
+  '<div><s>แท็บ</s> LEDGER_เคลื่อนไหว</div>' +
+  '<div><s>รหัส</s> ' + esc(it ? it.code : '—') + '</div>' +
+  '<div><s>ประเภท</s> ปรับยอด</div>' +
+  '<div><s>เข้า</s> ' + (d2 > 0 ? d2 : 0) + ' &nbsp; <s>ออก</s> ' + (d2 < 0 ? -d2 : 0) + '</div>' +
+  '<div><s>เหตุผล</s> ' + esc($('aWhy').value) + '</div>' +
+  '<div><s>ผู้บันทึก</s> ' + esc(D ? D.me.email : '') + '</div>';
+  }
+  $('btnAdj').onclick = function () {
+  var it = itemBy($('aPick').value);
+  if (!it) { toast('ยังไม่ได้เลือกรายการ', true); return; }
+  if ($('aReal').value === '') { toast('ยังไม่ได้กรอกยอดที่นับได้จริง', true); return; }
+  var b = this; b.disabled = true;
+  google.script.run
+  .withSuccessHandler(function (r) {
+  b.disabled = false;
+  toast(r.changed ? 'บันทึกส่วนต่าง ' + (r.diff > 0 ? '+' : '') + r.diff + ' แล้ว คงเหลือ ' + nf(r.bal) : r.msg);
+  $('aReal').value = ''; $('aNote').value = '';
+  refresh();
+  })
+  .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+  .adminAdjust({ tok: TOK, code: it.code, real: $('aReal').value, reason: $('aWhy').value, note: $('aNote').value });
+  };
+  
+  // ── รายการคงค้าง ──
+  ['fYear', 'fCat', 'fStatus', 'fQ'].forEach(function (id) {
+  $(id).addEventListener('input', drawRows);
+  $(id).addEventListener('change', drawRows);
+  });
+  function filtered() {
+  if (!D) return [];
+  var y = $('fYear').value, c = $('fCat').value, s = $('fStatus').value,
+  q = $('fQ').value.trim().toLowerCase();
+  return D.items.filter(function (i) {
+  if (y !== 'ทุกปี' && i.year !== y) return false;
+  if (c !== 'ทุกหมวด' && i.cat !== c) return false;
+  if (s !== 'ทั้งหมด' && i.status !== s) return false;
+  if (q && (i.code + ' ' + i.name).toLowerCase().indexOf(q) < 0) return false;
+  return true;
+  });
+  }
+  function drawRows() {
+  if (!D) return;
+  var list = filtered();
+  $('fCount').textContent = 'พบ ' + nf(list.length) + ' รายการ';
+  var cap = list.slice(0, 300);
+  $('shown').textContent = 'แสดง ' + nf(cap.length) + ' จาก ' + nf(list.length) + ' รายการ';
+  $('rows').innerHTML = cap.map(function (i) {
+  var on = !!SEL[i.code], m = MODE[i.code] || 'keep';
+  return '<tr style="' + (on ? 'background:#f7faff' : '') + '">' +
+  '<td><input type="checkbox" data-sel="' + esc(i.code) + '"' + (on ? ' checked' : '') +
+  ' aria-label="เลือก ' + esc(i.code + ' ' + i.name) + '" style="width:18px;height:18px;min-height:18px;padding:0"></td>' +
+  '<td class="mono" style="color:var(--navy);white-space:nowrap">' + esc(i.code) + '</td>' +
+  '<td>' + esc(i.name) + '</td>' +
+  '<td class="mono" style="color:var(--muted)">' + esc(i.year || '—') + '</td>' +
+  '<td style="text-align:right;font-weight:600" class="mono">' + nf(i.bal) + '</td>' +
+  '<td><div class="seg"><button type="button" data-mode="keep" data-code="' + esc(i.code) + '"' +
+  (m === 'keep' ? ' class="on" style="background:var(--navy)"' : '') + '>เก็บยอดไว้</button>' +
+  '<button type="button" data-mode="zero" data-code="' + esc(i.code) + '"' +
+  (m === 'zero' ? ' class="on" style="background:var(--retfg)"' : '') + '>ตัดเหลือ 0</button></div></td></tr>';
+  }).join('') || '<tr><td colspan="6" style="color:var(--muted)">ไม่พบรายการตามเงื่อนไขนี้</td></tr>';
+  updSel();
+  }
+  $('rows').addEventListener('change', function (e) {
+  var c = e.target.getAttribute('data-sel');
+  if (!c) return;
+  if (e.target.checked) SEL[c] = 1; else delete SEL[c];
+  updSel(); drawRows();
+  });
+  $('rows').addEventListener('click', function (e) {
+  var b = e.target.closest('[data-mode]');
+  if (!b) return;
+  MODE[b.getAttribute('data-code')] = b.getAttribute('data-mode');
+  drawRows();
+  });
+  $('chkAll').onchange = function () {
+  var on = this.checked;
+  filtered().slice(0, 300).forEach(function (i) { if (on) SEL[i.code] = 1; else delete SEL[i.code]; });
+  drawRows();
+  };
+  $('btnClear').onclick = function () { SEL = {}; $('chkAll').checked = false; drawRows(); };
+  function picked() {
+  if (!D) return [];
+  return D.items.filter(function (i) { return SEL[i.code]; });
+  }
+  function updSel() {
+  var p = picked();
+  var z = p.filter(function (i) { return (MODE[i.code] || 'keep') === 'zero'; });
+  var cut = z.reduce(function (s, i) { return s + i.bal; }, 0);
+  $('selLine').textContent = 'เลือกไว้ ' + nf(p.length) + ' รายการ · ' +
+  nf(p.reduce(function (s, i) { return s + i.bal; }, 0)) + ' ชิ้น';
+  $('selSplit').textContent = 'เก็บยอดไว้ ' + nf(p.length - z.length) + ' รายการ · ตัดเหลือ 0 จำนวน ' +
+  nf(z.length) + ' รายการ รวม ' + nf(cut) + ' ชิ้น';
+  $('btnRetire').disabled = !p.length;
+  $('btnReopen').disabled = !p.length;
+  }
+  $('btnRetire').onclick = function () {
+  var p = picked();
+  if (!p.length) return;
+  var z = p.filter(function (i) { return (MODE[i.code] || 'keep') === 'zero'; });
+  var cut = z.reduce(function (s, i) { return s + i.bal; }, 0);
+  if (!confirm('ปิด ' + p.length + ' รายการ\nตัดเหลือ 0 จำนวน ' + z.length + ' รายการ รวม ' + cut +
+  ' ชิ้น\nเหตุผล: ' + $('rReason').value + '\n\nยืนยันหรือไม่')) return;
+  var b = this; b.disabled = true;
+  google.script.run
+  .withSuccessHandler(function (r) {
+  b.disabled = false;
+  toast('ปิด ' + r.closed + ' รายการ · ตัดจำหน่าย ' + r.zeroed + ' รายการ รวม ' + nf(r.pieces) + ' ชิ้น' +
+  (r.unchanged && r.unchanged.length ? ' · ข้าม ' + r.unchanged.length + ' รายการที่ปิดอยู่แล้ว' : ''));
+  SEL = {}; refresh();
+  })
+  .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+  .adminRetire({ tok: TOK, reason: $('rReason').value,
+  list: p.map(function (i) { return { code: i.code, mode: MODE[i.code] || 'keep' }; }) });
+  };
+  $('btnReopen').onclick = function () {
+  var p = picked();
+  if (!p.length) return;
+  if (!confirm('เปิดใช้งาน ' + p.length + ' รายการอีกครั้ง\nยอดคงเหลือไม่เปลี่ยน\n\nยืนยันหรือไม่')) return;
+  var b = this; b.disabled = true;
+  google.script.run
+  .withSuccessHandler(function (r) {
+  b.disabled = false; toast('เปิดใช้งาน ' + r.reopened + ' รายการแล้ว');
+  SEL = {}; refresh();
+  })
+  .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+  .adminReopen({ tok: TOK, list: p.map(function (i) { return { code: i.code }; }) });
+  };
+  
+  // ── แก้ไขรายละเอียดรายการ ──
+  var EF = [['name', 'eName', 'ชื่อ'], ['en', 'eEn', 'ชื่อภาษาอังกฤษ'], ['cat', 'eCat', 'หมวดหลัก'], ['sub', 'eSub', 'หมวดย่อย'],
+            ['size', 'eSize', 'ไซส์ / รายละเอียด'], ['xsize', 'eX', 'ไซส์เสื้อ'], ['loc', 'eLoc', 'ที่เก็บ']];
+  var EIT = null;
+  function buildEditLists() {
+    $('itemList3').innerHTML = D.items.map(function (i) {
+      return '<option value="' + esc(i.code + ' · ' + i.name + (i.status !== 'ใช้งาน' ? ' (' + i.status + ')' : '')) + '">';
+    }).join('');
+    fill($('eCat'), D.cats);
+    $('subList').innerHTML = D.subs.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
+    $('locList').innerHTML = D.locs.map(function (v) { return '<option value="' + esc(v) + '">'; }).join('');
+  }
+  function eVal(id) { return String($(id).value || '').replace(/\s+/g, ' ').trim(); }
+  function eDiff() {
+    if (!EIT) return [];
+    return EF.filter(function (f) { return eVal(f[1]) !== String(EIT[f[0]] || ''); })
+      .map(function (f) { return [f[2], EIT[f[0]] || '', eVal(f[1])]; });
+  }
+  function eDraw() {
+    var d = eDiff();
+    $('eChg').innerHTML = d.length ? d.map(function (x) {
+      return '<li><b>' + esc(x[0]) + '</b>: ' + esc(x[1] || '(ว่าง)') + ' → ' + esc(x[2] || '(ว่าง)') + '</li>';
+    }).join('') : '<li style="color:var(--muted);list-style:none;margin-left:-18px">ยังไม่มีการแก้ไข</li>';
+    $('btnEdit').disabled = !EIT || !d.length || !eVal('eName');
+  }
+  $('ePick').oninput = function () {
+    EIT = itemBy(this.value);
+    if (EIT) {
+      EF.forEach(function (f) { $(f[1]).value = EIT[f[0]] || ''; });
+      if (EIT.cat && D.cats.indexOf(EIT.cat) < 0) $('eCat').insertAdjacentHTML('beforeend', '<option>' + esc(EIT.cat) + '</option>');
+      $('eCat').value = EIT.cat || '';
+      $('eInfo').textContent = EIT.code + ' · คงเหลือ ' + nf(EIT.bal) + ' · สถานะ ' + EIT.status;
+    } else {
+      $('eInfo').textContent = 'ยังไม่ได้เลือกรายการ';
+    }
+    eDraw();
+  };
+  EF.forEach(function (f) { $(f[1]).addEventListener('input', eDraw); $(f[1]).addEventListener('change', eDraw); });
+  $('btnEdit').onclick = function () {
+    if (!EIT || !eDiff().length) return;
+    var b = this; b.disabled = true;
+    var p = { tok: TOK, code: EIT.code, note: $('eNote').value };
+    EF.forEach(function (f) { p[f[0]] = eVal(f[1]); });
+    google.script.run
+      .withSuccessHandler(function (r) {
+        if (r.changed) {
+          Object.keys(r.item).forEach(function (k) { EIT[k] = r.item[k]; });
+          toast('บันทึกการแก้ไข ' + r.code + ' แล้ว ' + r.changed + ' ช่อง');
+          var dl = D.items.map(function (i) { return '<option value="' + esc(i.code + ' · ' + i.name) + '">'; }).join('');
+          $('itemList').innerHTML = dl; $('itemList2').innerHTML = dl; buildEditLists();
+          $('ePick').value = EIT.code + ' · ' + EIT.name; $('eNote').value = '';
+          drawRows();
+        } else toast('ไม่มีช่องที่เปลี่ยน');
+        eDraw();
+      })
+      .withFailureHandler(function (e) { b.disabled = false; toast(String(e && e.message || e), true); })
+      .adminEditItem(p);
+  };
+
+  function refresh() {
+  google.script.run.withSuccessHandler(function (d) {
+  D = d;
+  $('cntActive').textContent = 'ใช้งานอยู่ ' + nf(d.counts.active) + ' รายการ';
+  $('cntRetire').textContent = 'เลิกใช้แล้ว ' + nf(d.counts.retired) + ' รายการ';
+  $('nextCode').textContent = d.nextCode;
+  drawRows();
+  }).adminBoot(TOK);
+  }
+  
+  boot();
+  </script>
+  </body>
+  </html>

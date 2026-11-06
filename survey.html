@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<title>แบบสอบถามผู้ใช้งาน — {{APP}}</title>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --app-navy:#0A2342; --app-navy-deep:#061A33; --app-ocean:#1B7FA8; --app-ocean-text:#176887;
+  --app-ocean-light:#EAF6FC; --app-bg:#F2F8FC; --app-card:#FFFFFF; --app-text:#0E2033;
+  --app-text-soft:#50677D; --app-border:#CFE2EF; --app-good:#1A7F5A; --app-warn:#946202; --app-danger:#B3341F;
+  --app-font:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif; --app-font-head:"Kanit","IBM Plex Sans Thai",sans-serif;
+  --app-radius:10px;
+}
+body{background:var(--app-bg);color:var(--app-text);font-family:var(--app-font);font-size:15px}
+.app-wrap{max-width:720px;margin:0 auto;padding:0 16px 56px}
+.app-header{background:linear-gradient(160deg,var(--app-navy-deep) 0%,var(--app-navy) 60%,#123A63 100%);
+  color:#EAF6FC;padding:24px 16px 20px;border-bottom:3px solid var(--app-ocean);margin-bottom:22px}
+.app-header .inner{max-width:720px;margin:0 auto}
+.app-header .org{font-size:16px;letter-spacing:.02em;color:#fff;font-weight:600;margin-bottom:6px}
+.app-header h1{font-family:var(--app-font-head);font-weight:600;font-size:clamp(20px,4vw,27px);margin:0;color:#fff}
+.app-header .who{color:#A8CFE4;font-size:12.5px;margin:5px 0 0}
+.app-card{background:var(--app-card);border:1px solid var(--app-border);border-radius:var(--app-radius);padding:20px;margin-bottom:16px}
+.app-card h2{font-family:var(--app-font-head);font-weight:600;font-size:16px;margin:0 0 15px;display:flex;align-items:center;gap:9px}
+.app-card h2::before{content:"";width:3px;height:16px;background:var(--app-ocean);border-radius:2px;flex:none}
+.form-label{font-size:12.5px;font-weight:500;color:var(--app-text-soft);margin-bottom:4px}
+.form-label .req{color:var(--app-danger)}
+.form-control{border-color:var(--app-border);border-radius:8px;font-size:14.5px;padding:9px 11px}
+.form-control:focus{border-color:var(--app-ocean);box-shadow:0 0 0 .18rem rgba(27,127,168,.18)}
+.form-control[readonly]{background:var(--app-ocean-light);font-weight:600}
+.btn-app{background:var(--app-navy);color:#fff;border:0;border-radius:8px;padding:10px 22px;font-family:var(--app-font-head);font-weight:500;font-size:14.5px;text-decoration:none;display:inline-block}
+.btn-app:hover{background:var(--app-ocean);color:#fff}
+.btn-app:disabled{opacity:.6}
+.hint{font-size:12.5px;color:var(--app-text-soft)}
+.chip{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--app-ocean-light);color:var(--app-ocean-text);font-weight:500}
+.chip.warn{background:color-mix(in srgb,var(--app-warn) 14%,transparent);color:var(--app-warn)}
+.chip.good{background:color-mix(in srgb,var(--app-good) 14%,transparent);color:var(--app-good)}
+.chip.bad{background:color-mix(in srgb,var(--app-danger) 14%,transparent);color:var(--app-danger)}
+.msg{border-radius:8px;padding:13px 16px;margin-top:14px;font-size:14px;display:none}
+.msg.err{display:block;background:color-mix(in srgb,var(--app-danger) 10%,transparent);border:1px solid color-mix(in srgb,var(--app-danger) 35%,transparent);color:var(--app-danger)}
+.msg.ok{display:block;background:color-mix(in srgb,var(--app-good) 12%,transparent);border:1px solid color-mix(in srgb,var(--app-good) 35%,transparent)}
+.want{display:flex;flex-wrap:wrap;gap:10px}
+.want label{flex:1;min-width:150px;border:1px solid var(--app-border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;gap:9px;align-items:center;background:#fff;font-size:14px}
+.want label:has(input:checked){border-color:var(--app-ocean);background:var(--app-ocean-light)}
+.lines{overflow-x:auto;border:1px solid var(--app-border);border-radius:8px;margin-top:10px}
+.lines table{width:100%;border-collapse:collapse;font-size:13.5px;margin:0}
+.lines th{background:var(--app-navy);color:#DCEEF8;font-size:11.5px;font-weight:500;padding:8px 11px;text-align:left;white-space:nowrap}
+.lines td{padding:7px 11px;border-top:1px solid var(--app-border)}
+.lines td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="app-header"><div class="inner">
+  <div class="org" id="org">{{ORG}}</div>
+  <h1>แบบสอบถามผู้ใช้งาน</h1>
+  <p class="who" id="who">กรุณากรอกข้อมูลก่อนเข้าใช้งานระบบเบิก จ่าย คืน</p>
+</div></div>
+
+<div class="app-wrap">
+  <div class="app-card" id="formCard">
+    <h2>ข้อมูลผู้ขอใช้บริการ</h2>
+    <div class="row g-3">
+      <div class="col-12">
+        <label class="form-label" for="fEmail">อีเมลที่ใช้เข้าสู่ระบบ</label>
+        <input class="form-control" id="fEmail" readonly>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="fName">ชื่อ-นามสกุล <span class="req">*</span></label>
+        <input class="form-control" id="fName" autocomplete="name" placeholder="เช่น สมชาย ใจดี">
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="fPhone">เบอร์โทรศัพท์ <span class="req">*</span></label>
+        <input class="form-control" id="fPhone" type="tel" autocomplete="tel" placeholder="08x-xxx-xxxx">
+      </div>
+      <div class="col-12 col-md-6">
+        <label class="form-label" for="fOrg">หน่วยงาน / องค์กร <span class="req">*</span></label>
+        <input class="form-control" id="fOrg" autocomplete="organization" placeholder="เช่น ชื่อหน่วยงานหรือองค์กรที่สังกัด">
+      </div>
+      <div class="col-12">
+        <label class="form-label">ประเภทงานที่ต้องการ <span class="req">*</span></label>
+        <div class="want" id="wantBox"></div>
+      </div>
+      <div class="col-12">
+        <label class="form-label" for="fPurpose">วัตถุประสงค์ที่จะเบิก / รับ / คืน <span class="req">*</span></label>
+        <textarea class="form-control" id="fPurpose" rows="3" placeholder="เช่น ยืมอุปกรณ์ไปใช้ในกิจกรรม... วันที่..."></textarea>
+      </div>
+    </div>
+
+
+    <button class="btn btn-app mt-3" id="btnSave" onclick="save()">บันทึกและเข้าใช้งานระบบ</button>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <div class="app-card" id="doneCard" style="display:none">
+    <h2>บันทึกแล้ว</h2>
+    <p>ขอบคุณครับ ข้อมูลของคุณถูกบันทึกเรียบร้อย เข้าใช้งานระบบได้เลย</p>
+    <a class="btn-app" id="goBtn" target="_top" href="#">เข้าใช้งานระบบ</a>
+  </div>
+</div>
+
+<script>
+const $ = i => document.getElementById(i);
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function showMsg(t, cls){ const m = $('msg'); m.className = 'msg ' + cls; m.textContent = t; }
+
+window.addEventListener('DOMContentLoaded', function(){
+  google.script.run.withSuccessHandler(function(b){
+    $('org').textContent = b.org;
+    $('fEmail').value = b.email;
+    $('wantBox').innerHTML = (b.wants || []).map(function(w, i){
+      return '<label><input type="checkbox" name="want" value="' + esc(w) + '"> ' + esc(w) + '</label>';
+    }).join('');
+    $('goBtn').href = b.homeUrl;
+    $('who').textContent = (StockAuth.authBy() === 'EMAIL' ? 'เข้าสู่ระบบด้วยรหัสทางอีเมล ' : 'เข้าสู่ระบบด้วยบัญชี Google ') + b.email;
+  }).withFailureHandler(function(e){ showMsg(e.message, 'err'); }).surveyBoot();
+});
+
+function save(){
+
+  var want = Array.prototype.slice.call(document.querySelectorAll('input[name=want]:checked')).map(function(x){ return x.value; });
+  var d = { name: $('fName').value, phone: $('fPhone').value, org: $('fOrg').value, purpose: $('fPurpose').value, want: want };
+  $('btnSave').disabled = true; $('msg').className = 'msg';
+  google.script.run.withSuccessHandler(function(r){
+    $('goBtn').href = r.homeUrl;
+    $('formCard').style.display = 'none';
+    $('doneCard').style.display = '';
+  }).withFailureHandler(function(e){
+    $('btnSave').disabled = false; showMsg(e.message, 'err');
+  }).submitSurvey(d);
+}
+</script>
+</body>
+</html>

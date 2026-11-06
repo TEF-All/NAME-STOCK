@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>แดชบอร์ดตรวจนับ — {{APP}}</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+<style>
+/* ───── สีทั้งหมดอยู่ในบล็อกนี้บล็อกเดียว แก้ที่นี่ที่เดียวพอ ───── */
+:root{
+  --navy:#0A2342;        /* แถบหัว */
+  --ocean:#1B7FA8;       /* สีรอง เส้นคั่น ไอคอน */
+  --ocean-text:#176887;  /* สีข้อความฟ้า ใช้แทน ocean เวลาเป็นตัวหนังสือ */
+  --sky:#EAF6FC;         /* พื้นหลังหน้า */
+  --card:#FFFFFF;
+  --line:#D8E4EC;
+  --ink:#16232E;
+  --ink-soft:#5B7183;
+  --bad:#B3261E;         /* ตรวจนับไม่พบ */
+  --bad-tint:#FDECEA;
+  --warn:#946202;
+  --warn-tint:#FFF3C4;
+  --good:#1E6B4F;
+  --good-tint:#E6F4EC;
+  --fd:'Kanit','IBM Plex Sans Thai',system-ui,sans-serif;
+  --fb:'IBM Plex Sans Thai',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--sky);color:var(--ink);font-family:var(--fb);font-size:15px;line-height:1.65}
+.bar{background:var(--navy);color:#fff;padding:16px 18px}
+.bar .wrap{max-width:1040px;margin:0 auto;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between}
+.bar h1{font-family:var(--fd);font-weight:600;font-size:1.18rem;margin:0}
+.bar .org{font-size:.76rem;opacity:.75;margin:0 0 2px}
+.bar .right{display:flex;gap:10px;align-items:center;font-size:.78rem;opacity:.85}
+button.rf{font-family:var(--fb);font-size:.82rem;font-weight:600;background:var(--ocean);color:#fff;
+  border:0;border-radius:7px;padding:8px 15px;cursor:pointer}
+button.rf:hover{filter:brightness(1.1)}
+button.rf:disabled{opacity:.55;cursor:default}
+
+main{max-width:1040px;margin:0 auto;padding:22px 18px 60px}
+section{margin-bottom:26px}
+h2{font-family:var(--fd);font-weight:500;font-size:1rem;margin:0 0 10px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px}
+
+/* ความคืบหน้า */
+.prog .top{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}
+.prog .big{font-family:var(--fd);font-weight:600;font-size:1.7rem;color:var(--navy);font-variant-numeric:tabular-nums}
+.prog .pct{font-family:var(--fd);font-size:1.1rem;color:var(--ocean-text)}
+.track{height:12px;border-radius:99px;background:var(--sky);border:1px solid var(--line);overflow:hidden;margin:12px 0 8px}
+.fill{height:100%;background:var(--ocean);width:0;transition:width .5s}
+.sub{font-size:.85rem;color:var(--ink-soft)}
+
+/* ไทล์ตัวเลข */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px}
+.tile .k{font-size:.78rem;color:var(--ink-soft);margin:0 0 4px}
+.tile .v{font-family:var(--fd);font-weight:600;font-size:1.5rem;font-variant-numeric:tabular-nums;margin:0}
+.tile .u{font-size:.74rem;color:var(--ink-soft);font-family:var(--fb);font-weight:400;margin-left:4px}
+.tile.t-bad{background:var(--bad-tint);border-color:#F3C9C5}
+.tile.t-bad .v{color:var(--bad)}
+.tile.t-good{background:var(--good-tint);border-color:#C6E3D4}
+.tile.t-good .v{color:var(--good)}
+
+.note{background:var(--warn-tint);border:1px solid #EBDAA3;border-left:3px solid var(--warn);
+  border-radius:0 8px 8px 0;padding:11px 14px;font-size:.85rem;color:#5E4302;margin-top:12px}
+
+/* ตาราง */
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.86rem}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{background:var(--navy);color:#fff;font-family:var(--fd);font-weight:500;font-size:.8rem;position:sticky;top:0}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:#FBFDFE}
+td.name{white-space:normal;min-width:220px}
+.dash-photo{width:42px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--line);background:var(--sky);vertical-align:middle}
+.dash-photo-empty{display:inline-flex;width:42px;height:36px;align-items:center;justify-content:center;border-radius:6px;background:var(--sky);color:var(--ink-soft);font-size:.72rem}
+.photo-cell{text-align:center;width:58px}
+.neg{color:var(--bad);font-weight:600}
+.pos{color:var(--good);font-weight:600}
+.pill{display:inline-block;font-size:.72rem;padding:2px 8px;border-radius:99px;
+  background:var(--bad-tint);color:var(--bad);font-weight:600}
+.empty{padding:22px;text-align:center;color:var(--ink-soft);font-size:.87rem}
+footer{max-width:1040px;margin:0 auto;padding:0 18px 40px;font-size:.78rem;color:var(--ink-soft)}
+@media(max-width:480px){ .bar h1{font-size:1.04rem} .prog .big{font-size:1.4rem} }
+</style>
+</head>
+<body>
+
+<div class="bar"><div class="wrap">
+  <div>
+    <p class="org">{{ORG}}</p>
+    <h1>แดชบอร์ดตรวจนับพัสดุ</h1>
+  </div>
+  <div class="right">
+    <span id="asof">กำลังอ่านยอดจากชีต…</span>
+    <button class="rf" id="rf" type="button">อ่านยอดใหม่</button>
+  </div>
+</div></div>
+
+<main>
+  <section class="prog">
+    <div class="card">
+      <div class="top">
+        <span class="big" id="pDone">—</span>
+        <span class="pct" id="pPct"></span>
+      </div>
+      <div class="track"><div class="fill" id="pFill"></div></div>
+      <p class="sub" id="pSub">กำลังโหลด</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>ยอดของรายการที่ตรวจนับไปแล้ว</h2>
+    <div class="tiles">
+      <div class="tile"><p class="k">ยอดในระบบ (รายการที่นับแล้ว ณ ตอนนับ)</p><p class="v"><span id="tOld">—</span><span class="u">ชิ้น</span></p></div>
+      <div class="tile"><p class="k">นับได้จริงรอบนี้</p><p class="v"><span id="tNew">—</span><span class="u">ชิ้น</span></p></div>
+      <div class="tile t-bad" id="tileShort"><p class="k">ตรวจนับไม่พบ</p><p class="v"><span id="tShort">—</span><span class="u">ชิ้น</span></p></div>
+      <div class="tile t-good" id="tileOver"><p class="k">นับได้เกินยอดในระบบ</p><p class="v"><span id="tOver">—</span><span class="u">ชิ้น</span></p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>แยกตามหมวดหลัก</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>หมวดหลัก</th><th class="n">นับแล้ว</th><th class="n">ทั้งหมด</th>
+        <th class="n">ยอดในระบบ</th><th class="n">นับได้</th><th class="n">ส่วนต่าง</th>
+      </tr></thead>
+      <tbody id="tbCat"><tr><td colspan="6" class="empty">กำลังโหลด</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>รายการที่ตรวจนับไม่พบ <span id="shortCount" class="pill" style="display:none"></span></h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>รหัส</th><th>รายการ</th><th class="n">ยอดในระบบ</th><th class="n">นับได้</th>
+        <th class="n">ส่วนต่าง</th><th>สถานที่เก็บ</th><th>ผู้นับ</th>
+      </tr></thead>
+      <tbody id="tbShort"><tr><td colspan="7" class="empty">กำลังโหลด</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section id="secOver">
+    <h2>รายการที่นับได้เกินยอดในระบบ</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>รหัส</th><th>รายการ</th><th class="n">ยอดในระบบ</th><th class="n">นับได้</th><th class="n">ส่วนต่าง</th><th>ผู้นับ</th>
+      </tr></thead>
+      <tbody id="tbOver"><tr><td colspan="6" class="empty">กำลังโหลด</td></tr></tbody>
+    </table></div>
+  </section>
+
+  <section>
+    <h2>บันทึกการนับล่าสุด</h2>
+    <div class="scroll"><table>
+      <thead><tr>
+        <th>เวลา</th><th>รูป</th><th>รหัส</th><th>รายการ</th><th class="n">นับได้</th><th class="n">ส่วนต่าง</th><th>สถานะ</th><th>ผู้นับ</th>
+      </tr></thead>
+      <tbody id="tbLog"><tr><td colspan="8" class="empty">กำลังโหลด</td></tr></tbody>
+    </table></div>
+  </section>
+</main>
+
+<script>
+var $ = function (id) { return document.getElementById(id); };
+var nf = function (v) { return (Number(v) || 0).toLocaleString('th-TH'); };
+var esc = function (s) {
+  return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+  });
+};
+var signed = function (d) {
+  d = Number(d) || 0;
+  if (d === 0) return '<td class="n">0</td>';
+  return '<td class="n ' + (d < 0 ? 'neg' : 'pos') + '">' + (d > 0 ? '+' : '') + nf(d) + '</td>';
+};
+var DASH_PHOTO_SEQ = 0;
+function dashPhotoCell(r, index) {
+  if (index >= 12) return '<td class="photo-cell"><span class="dash-photo-empty">—</span></td>';
+  var code = String(r && r.code || '').trim();
+  var name = String(r && r.name || code).trim();
+  if (!code) return '<td class="photo-cell"><span class="dash-photo-empty">—</span></td>';
+  return '<td class="photo-cell"><span class="dash-photo-empty" data-dash-photo-code="' + esc(code) + '" data-dash-photo-name="' + esc(name) + '">โหลด</span></td>';
+}
+function hydrateDashPhotos(rows) {
+  var seq = ++DASH_PHOTO_SEQ;
+  var codes = [];
+  (rows || []).slice(0, 12).forEach(function (r) {
+    var code = String(r && r.code || '').trim();
+    if (code && codes.indexOf(code) < 0) codes.push(code);
+  });
+  if (!codes.length) return;
+  google.script.run.withSuccessHandler(function (photos) {
+    if (seq !== DASH_PHOTO_SEQ) return;
+    document.querySelectorAll('[data-dash-photo-code]').forEach(function (node) {
+      var code = node.getAttribute('data-dash-photo-code');
+      var url = photos && photos[code];
+      if (typeof url === 'string' && url.indexOf('data:image/') === 0) {
+        var img = document.createElement('img');
+        img.className = 'dash-photo';
+        img.src = url;
+        img.alt = (node.getAttribute('data-dash-photo-name') || code) + ' · ' + code;
+        node.replaceWith(img);
+      } else {
+        node.textContent = 'ไม่มีรูป';
+        node.className = 'dash-photo-empty';
+      }
+    });
+  }).withFailureHandler(function () {
+    if (seq !== DASH_PHOTO_SEQ) return;
+    document.querySelectorAll('[data-dash-photo-code]').forEach(function (node) {
+      node.textContent = 'ไม่มีรูป';
+      node.className = 'dash-photo-empty';
+    });
+  }).stockPhotos(codes);
+}
+var fill = function (tb, cols, html) {
+  $(tb).innerHTML = html || '<tr><td colspan="' + cols + '" class="empty">ยังไม่มีข้อมูลในกลุ่มนี้</td></tr>';
+};
+
+function render(d) {
+  $('asof').textContent = 'ข้อมูล ณ ' + d.asof;
+
+  $('pDone').textContent = 'นับแล้ว ' + nf(d.done) + ' จาก ' + nf(d.total) + ' รายการ';
+  $('pPct').textContent = d.percent + '%';
+  $('pFill').style.width = Math.max(d.percent, 0.5) + '%';
+  $('pSub').textContent = 'ยังไม่ได้นับอีก ' + nf(d.pending) + ' รายการ'
+    + ' · ยอดในระบบทั้งทะเบียน ' + nf(d.oldAll) + ' ชิ้น';
+
+  $('tOld').textContent = nf(d.oldDone);
+  $('tNew').textContent = nf(d.newSum);
+  $('tShort').textContent = nf(d.shortQty);
+  $('tOver').textContent = nf(d.overQty);
+  $('tileShort').querySelector('.k').textContent = 'ตรวจนับไม่พบ · ' + nf(d.shortRows) + ' รายการ';
+  $('tileOver').querySelector('.k').textContent = 'นับได้เกินยอดในระบบ · ' + nf(d.overRows) + ' รายการ';
+
+  fill('tbCat', 6, d.cats.map(function (c) {
+    return '<tr><td class="name">' + esc(c.name) + '</td>'
+      + '<td class="n">' + nf(c.done) + '</td><td class="n">' + nf(c.total) + '</td>'
+      + '<td class="n">' + nf(c.old) + '</td><td class="n">' + nf(c.now) + '</td>'
+      + signed(c.diff) + '</tr>';
+  }).join(''));
+
+  if (d.shortRows) {
+    $('shortCount').style.display = '';
+    $('shortCount').textContent = nf(d.shortRows) + ' รายการ · ' + nf(d.shortQty) + ' ชิ้น';
+  }
+  fill('tbShort', 7, d.short.map(function (i) {
+    return '<tr><td>' + esc(i.code) + '</td><td class="name">' + esc(i.name) + '</td>'
+      + '<td class="n">' + nf(i.old) + '</td><td class="n">' + nf(i.now) + '</td>'
+      + signed(i.diff) + '<td>' + esc(i.loc) + '</td><td>' + esc(i.by) + '</td></tr>';
+  }).join(''));
+
+  fill('tbOver', 6, d.over.map(function (i) {
+    return '<tr><td>' + esc(i.code) + '</td><td class="name">' + esc(i.name) + '</td>'
+      + '<td class="n">' + nf(i.old) + '</td><td class="n">' + nf(i.now) + '</td>'
+      + signed(i.diff) + '<td>' + esc(i.by) + '</td></tr>';
+  }).join(''));
+
+  fill('tbLog', 8, d.recent.map(function (r, index) {
+    return '<tr><td>' + esc(r.when) + '</td>' + dashPhotoCell(r, index) + '<td>' + esc(r.code) + '</td>'
+      + '<td class="name">' + esc(r.name) + '</td><td class="n">' + nf(r.now) + '</td>'
+      + signed(r.diff) + '<td>' + esc(r.status) + '</td><td>' + esc(r.by) + '</td></tr>';
+  }).join(''));
+  hydrateDashPhotos(d.recent);
+
+  $('rf').disabled = false;
+  $('rf').textContent = 'อ่านยอดใหม่';
+}
+
+function failed(err) {
+  $('asof').textContent = 'อ่านยอดไม่สำเร็จ';
+  $('rf').disabled = false;
+  $('rf').textContent = 'ลองใหม่';
+  var msg = 'อ่านยอดจากชีตไม่สำเร็จ — ' + esc(err && err.message ? err.message : err);
+  ['tbCat', 'tbShort', 'tbOver', 'tbLog'].forEach(function (t) {
+    $(t).innerHTML = '<tr><td colspan="7" class="empty">' + msg + '</td></tr>';
+  });
+}
+
+function load() {
+  $('rf').disabled = true;
+  $('rf').textContent = 'กำลังอ่าน…';
+  $('asof').textContent = 'กำลังอ่านยอดจากชีต…';
+  google.script.run.withSuccessHandler(function (d) {
+    if (window.StockAPI && StockAPI.remember && StockAPI.mine) StockAPI.remember(StockAPI.mine('dash'), d);
+    render(d);
+  }).withFailureHandler(failed).dashData();
+}
+
+/* เปิดหน้า = แสดงสรุปที่จำไว้ในเครื่องทันที แล้วอ่านยอดใหม่จากชีตตามหลัง */
+function first() {
+  if (!(window.StockAPI && StockAPI.fresh && StockAPI.mine)) return load();
+  $('rf').disabled = true;
+  $('rf').textContent = 'กำลังอ่าน…';
+  $('asof').textContent = 'กำลังอ่านยอดจากชีต…';
+  var C = null;
+  StockAPI.fresh(StockAPI.mine('dash'), 'dashData', [], function (d, cached) {
+    render(d);
+    if (cached) {
+      C = d;
+      $('asof').textContent = 'ข้อมูล ณ ' + d.asof + ' (ที่จำไว้ในเครื่อง · กำลังอ่านยอดใหม่…)';
+      $('rf').disabled = true;
+      $('rf').textContent = 'กำลังอ่าน…';
+    }
+  }, function (e, had) {
+    if (!had) return failed(e);
+    $('asof').textContent = 'ข้อมูล ณ ' + (C ? C.asof : '-') + ' (ที่จำไว้ในเครื่อง · อ่านยอดใหม่ไม่สำเร็จ)';
+    $('rf').disabled = false;
+    $('rf').textContent = 'ลองใหม่';
+  });
+}
+
+$('rf').addEventListener('click', load);
+first();
+</script>
+</body>
+</html>

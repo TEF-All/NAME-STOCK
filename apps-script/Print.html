@@ -1,0 +1,116 @@
+<!--
+  Print.html — แบบฟอร์มสำหรับพิมพ์เก็บเป็นหลักฐาน (Offline Record)
+  ไฟล์นี้ถูก CountLib.gs เรียกผ่าน getPrintHtml() แล้วส่ง HTML กลับไปแสดงในหน้า count.html
+  ตัวแปรที่ใช้ได้ในไฟล์นี้:  d = ข้อมูลสรุป · org = ชื่อหน่วยงาน · docTitle = ชื่อเอกสาร
+
+  ╔════════════════════════════════════════════════════════════╗
+  ║  แก้หน้าตาเอกสารพิมพ์ได้ที่บล็อก <style> ด้านล่าง        ║
+  ║  ทุกคลาสขึ้นต้นด้วย .app-print เพื่อไม่ให้ชนกับหน้าเว็บ   ║
+  ╚════════════════════════════════════════════════════════════╝
+-->
+
+<style>
+/* ---- ขนาดและฟอนต์เอกสาร ---- */
+.app-print{
+  font-family: "IBM Plex Sans Thai", "TH Sarabun New", "Noto Sans Thai", sans-serif;
+  font-size: 14px;            /* ขนาดตัวอักษรในเอกสารพิมพ์ */
+  color: #000;
+  line-height: 1.6;
+}
+/* ---- หัวกระดาษ ---- */
+.app-print .ph{ text-align: center; border-bottom: 2px solid #0A2342; padding-bottom: 10px; margin-bottom: 18px; }
+.app-print .ph .org{ font-size: 15px; font-weight: 600; }
+.app-print .ph .tt{ font-family:"Kanit", sans-serif; font-size: 19px; font-weight: 600; margin-top: 4px; }
+.app-print .ph .sb{ font-size: 12px; color: #444; margin-top: 2px; }
+
+/* ---- แถบเลขที่เอกสาร ---- */
+.app-print .meta{ display: flex; justify-content: space-between; font-size: 12.5px; margin-bottom: 14px; }
+.app-print .meta b{ font-weight: 600; }
+
+/* ---- ตารางรายละเอียด ---- */
+.app-print table{ width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+.app-print th, .app-print td{ border: 1px solid #999; padding: 7px 10px; vertical-align: top; }
+.app-print th{ background: #EAF6FC; text-align: left; width: 32%; font-weight: 600; }
+.app-print td.num{ text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- กล่องเน้นยอดสามช่อง ---- */
+.app-print .nums{ display: flex; gap: 10px; margin-bottom: 16px; }
+.app-print .nums div{ flex: 1; border: 1px solid #999; border-radius: 6px; padding: 10px; text-align: center; }
+.app-print .nums .lb{ font-size: 11px; color: #444; }
+.app-print .nums .vl{ font-family:"Kanit", sans-serif; font-size: 22px; font-weight: 600; }
+.app-print .nums .hi{ background: #EAF6FC; }
+
+/* ---- ช่องลงนาม ---- */
+.app-print .sign{ display: flex; gap: 22px; margin-top: 34px; }
+.app-print .sign div{ flex: 1; text-align: center; font-size: 12.5px; }
+.app-print .sign .ln{ border-bottom: 1px dotted #000; height: 42px; margin-bottom: 6px; }
+.app-print .sign .nm{ color: #333; }
+
+/* ---- ท้ายกระดาษ ---- */
+.app-print .pf{ margin-top: 20px; border-top: 1px solid #bbb; padding-top: 7px; font-size: 10.5px; color: #555; }
+</style>
+
+<div class="app-print">
+
+  <!-- หัวกระดาษ -->
+  <div class="ph">
+    <div class="org"><?= org ?></div>
+    <div class="tt"><?= docTitle ?></div>
+    <div class="sb"><?= docSub ?></div>
+  </div>
+
+  <!-- เลขที่เอกสารและเวลา -->
+  <div class="meta">
+    <div>เลขที่ <b><?= d.reconId ?></b></div>
+    <div>บันทึกเมื่อ <b><?= d.savedAt ?></b></div>
+  </div>
+
+  <!-- สามยอดหลัก -->
+  <div class="nums">
+    <div>
+      <div class="lb">ยอดในระบบ</div>
+      <div class="vl"><?= d.qtyOld ?></div>
+    </div>
+    <div class="hi">
+      <div class="lb">ยอดที่นับได้จริง</div>
+      <div class="vl"><?= d.counted ?></div>
+    </div>
+    <div>
+      <div class="lb">ยอดส่วนต่าง</div>
+      <div class="vl"><?= d.diffLabel ?></div>
+    </div>
+  </div>
+
+  <!-- รายละเอียดรายการ -->
+  <table>
+    <tr><th>รหัสรายการ</th><td><?= d.code ?></td></tr>
+    <tr><th>ชื่อรายการ</th><td><?= d.name ?></td></tr>
+    <tr><th>หมวดหลัก / หมวดหมู่</th><td><?= d.mainCat ?><? if (d.subCat) { ?> · <?= d.subCat ?><? } ?></td></tr>
+    <tr><th>ไซส์ / รายละเอียด</th><td><?= d.size || '-' ?></td></tr>
+    <tr><th>จำนวนตั้งต้นในทะเบียน</th><td class="num"><?= d.qtyStart ?></td></tr>
+    <tr><th>สถานะการกระทบยอด</th><td><?= d.status ?></td></tr>
+    <tr><th>สถานะชั้นวาง</th><td><?= d.onShelf ?></td></tr>
+    <tr><th>สถานที่เก็บ</th><td><?= d.location ?></td></tr>
+    <tr><th>สภาพอุปกรณ์</th><td><?= d.condition ?></td></tr>
+    <tr><th>หมายเหตุ</th><td><?= d.note ?></td></tr>
+    <tr><th>อ้างอิงแถวในทะเบียน</th><td>แถวที่ <?= d.sheetRow ?> แท็บ ทะเบียนพัสดุ</td></tr>
+  </table>
+
+  <!-- ช่องลงนาม (ตั้งชื่อช่องได้ที่ assets/config.js → FORMS.COUNT.SIGNS) -->
+  <div class="sign">
+  <? for (var i = 0; i < signs.length; i++) { ?>
+    <div>
+      <div class="ln"></div>
+      <div><?= signs[i][0] ?><? if (signs[i][1]) { ?> / <?= signs[i][1] ?><? } ?></div>
+      <div class="nm">(<?= i === 0 ? d.counter : '....................................' ?>)</div>
+    </div>
+  <? } ?>
+  </div>
+
+  <div class="pf">
+    <? if (foot) { ?><?= foot ?> · <? } ?>
+    บันทึกโดยระบบตรวจนับ · ผู้บันทึก <?= d.recorder ?> ·
+    ข้อมูลจัดเก็บในแท็บ ทะเบียนพัสดุ และ RECON_LOG ของไฟล์ชีตระบบ ·
+    เอกสารฉบับนี้พิมพ์จากระบบ ใช้เป็นหลักฐานประกอบการตรวจนับ
+  </div>
+</div>

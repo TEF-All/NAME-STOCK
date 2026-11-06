@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<title>คำขอของฉัน — {{APP}}</title>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --app-navy:#0A2342; --app-navy-deep:#061A33; --app-ocean:#1B7FA8; --app-ocean-text:#176887;
+  --app-ocean-light:#EAF6FC; --app-bg:#F2F8FC; --app-card:#FFFFFF; --app-text:#0E2033;
+  --app-text-soft:#50677D; --app-border:#CFE2EF; --app-good:#1A7F5A; --app-warn:#946202; --app-danger:#B3341F;
+  --app-font:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif; --app-font-head:"Kanit","IBM Plex Sans Thai",sans-serif;
+  --app-radius:10px;
+}
+body{background:var(--app-bg);color:var(--app-text);font-family:var(--app-font);font-size:15px}
+.app-wrap{max-width:720px;margin:0 auto;padding:0 16px 56px}
+.app-header{background:linear-gradient(160deg,var(--app-navy-deep) 0%,var(--app-navy) 60%,#123A63 100%);
+  color:#EAF6FC;padding:24px 16px 20px;border-bottom:3px solid var(--app-ocean);margin-bottom:22px}
+.app-header .inner{max-width:720px;margin:0 auto}
+.app-header .org{font-size:16px;letter-spacing:.02em;color:#fff;font-weight:600;margin-bottom:6px}
+.app-header h1{font-family:var(--app-font-head);font-weight:600;font-size:clamp(20px,4vw,27px);margin:0;color:#fff}
+.app-header .who{color:#A8CFE4;font-size:12.5px;margin:5px 0 0}
+.app-card{background:var(--app-card);border:1px solid var(--app-border);border-radius:var(--app-radius);padding:20px;margin-bottom:16px}
+.app-card h2{font-family:var(--app-font-head);font-weight:600;font-size:16px;margin:0 0 15px;display:flex;align-items:center;gap:9px}
+.app-card h2::before{content:"";width:3px;height:16px;background:var(--app-ocean);border-radius:2px;flex:none}
+.form-label{font-size:12.5px;font-weight:500;color:var(--app-text-soft);margin-bottom:4px}
+.form-label .req{color:var(--app-danger)}
+.form-control{border-color:var(--app-border);border-radius:8px;font-size:14.5px;padding:9px 11px}
+.form-control:focus{border-color:var(--app-ocean);box-shadow:0 0 0 .18rem rgba(27,127,168,.18)}
+.form-control[readonly]{background:var(--app-ocean-light);font-weight:600}
+.btn-app{background:var(--app-navy);color:#fff;border:0;border-radius:8px;padding:10px 22px;font-family:var(--app-font-head);font-weight:500;font-size:14.5px;text-decoration:none;display:inline-block}
+.btn-app:hover{background:var(--app-ocean);color:#fff}
+.btn-app:disabled{opacity:.6}
+.hint{font-size:12.5px;color:var(--app-text-soft)}
+.chip{display:inline-block;font-size:11.5px;padding:2px 9px;border-radius:999px;background:var(--app-ocean-light);color:var(--app-ocean-text);font-weight:500}
+.chip.warn{background:color-mix(in srgb,var(--app-warn) 14%,transparent);color:var(--app-warn)}
+.chip.good{background:color-mix(in srgb,var(--app-good) 14%,transparent);color:var(--app-good)}
+.chip.bad{background:color-mix(in srgb,var(--app-danger) 14%,transparent);color:var(--app-danger)}
+.msg{border-radius:8px;padding:13px 16px;margin-top:14px;font-size:14px;display:none}
+.msg.err{display:block;background:color-mix(in srgb,var(--app-danger) 10%,transparent);border:1px solid color-mix(in srgb,var(--app-danger) 35%,transparent);color:var(--app-danger)}
+.msg.ok{display:block;background:color-mix(in srgb,var(--app-good) 12%,transparent);border:1px solid color-mix(in srgb,var(--app-good) 35%,transparent)}
+.want{display:flex;flex-wrap:wrap;gap:10px}
+.want label{flex:1;min-width:150px;border:1px solid var(--app-border);border-radius:8px;padding:10px 12px;cursor:pointer;display:flex;gap:9px;align-items:center;background:#fff;font-size:14px}
+.want label:has(input:checked){border-color:var(--app-ocean);background:var(--app-ocean-light)}
+.lines{overflow-x:auto;border:1px solid var(--app-border);border-radius:8px;margin-top:10px}
+.lines table{width:100%;border-collapse:collapse;font-size:13.5px;margin:0}
+.lines th{background:var(--app-navy);color:#DCEEF8;font-size:11.5px;font-weight:500;padding:8px 11px;text-align:left;white-space:nowrap}
+.lines td{padding:7px 11px;border-top:1px solid var(--app-border)}
+.lines td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+/* */
+.chip.kind{font-size:12px;vertical-align:middle;background:#e0e9f7;color:#0A2342}
+.signs{display:flex;flex-wrap:wrap;gap:6px}
+.sg{font-size:12.5px;padding:2px 8px;border-radius:999px;border:1px solid #d5dde8;color:#5b6b80;text-decoration:none}
+.sg.ok{background:#e9f7f0;color:#09614a;border-color:#bfe3d1}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.acts .btn-app{cursor:pointer}
+.acts .ghost{background:#fff;color:#0A2342;border:1px solid #c3cdde}
+.acts .danger{color:#a1121a;border-color:#f3c4c4}
+
+.app-modal[hidden]{display:none!important}
+.app-modal{position:fixed;inset:0;z-index:1050;display:grid;place-items:center;padding:18px}
+.app-modal-backdrop{position:absolute;inset:0;background:rgba(6,26,51,.62);backdrop-filter:blur(2px)}
+.app-modal-panel{position:relative;width:min(100%,520px);background:#fff;border:1px solid var(--app-border);border-radius:14px;box-shadow:0 20px 60px rgba(6,26,51,.28);padding:22px}
+.app-modal-panel h2{font-family:var(--app-font-head);font-size:20px;margin:0 0 8px;color:var(--app-navy)}
+.app-modal-panel h2::before{content:"";display:inline-block;width:4px;height:20px;background:var(--app-danger);border-radius:2px;margin-right:9px;vertical-align:-2px}
+.app-modal-panel p{margin:0 0 14px}
+.app-modal-panel textarea{min-height:105px;resize:vertical}
+.app-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.app-modal-actions .btn-app{cursor:pointer}
+.app-modal-actions .btn-app.ghost{background:#fff;color:var(--app-navy);border:1px solid #c3cdde}
+body.modal-open{overflow:hidden}
+.flt-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.flt-bar[hidden]{display:none!important}
+.flt-btn{border:1px solid var(--app-border);background:#fff;color:var(--app-text-soft);border-radius:999px;padding:6px 13px;font-size:13px;font-weight:500;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .15s}
+.flt-btn:hover{border-color:var(--app-ocean);color:var(--app-navy)}
+.flt-btn.on{background:var(--app-navy);border-color:var(--app-navy);color:#fff}
+.flt-btn .cnt{font-size:11.5px;padding:1px 7px;border-radius:999px;background:var(--app-ocean-light);color:var(--app-ocean-text);font-variant-numeric:tabular-nums}
+.flt-btn.on .cnt{background:rgba(255,255,255,.2);color:#fff}
+</style>
+</head>
+<body>
+
+<div class="app-header"><div class="inner">
+  <div class="org" id="org">{{ORG}}</div>
+  <h1>คำขอของฉัน</h1>
+  <p class="who" id="who">กำลังโหลด…</p>
+</div></div>
+
+<div class="app-wrap">
+  <div class="mb-3"><a class="btn-app" id="backBtn" target="_top" href="#">กลับหน้าเบิก / แจ้งคืน</a></div>
+  <div id="filterBar" class="flt-bar" hidden></div>
+  <div id="list"><p class="hint">กำลังโหลดรายการ…</p></div>
+</div>
+
+
+<div id="cancelModal" class="app-modal" hidden aria-hidden="true">
+  <div class="app-modal-backdrop" data-cancel-close></div>
+  <section class="app-modal-panel" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+    <h2 id="cancelModalTitle">ยกเลิกคำขอ</h2>
+    <p id="cancelModalText" class="hint"></p>
+    <label class="form-label" for="cancelReason">เหตุผลที่ยกเลิก <span class="req">*</span></label>
+    <textarea id="cancelReason" class="form-control" maxlength="500" placeholder="กรุณาระบุเหตุผล"></textarea>
+    <p id="cancelModalHint" class="hint mt-2 mb-0">กรุณาระบุเหตุผลเพื่อดำเนินการต่อ</p>
+    <div class="app-modal-actions">
+      <button type="button" class="btn-app ghost" data-cancel-close>ปิด</button>
+      <button type="button" class="btn-app danger" id="cancelModalSubmit">ยืนยันการยกเลิก</button>
+    </div>
+  </section>
+</div>
+
+<script>
+const $ = i => document.getElementById(i);
+function esc(s){ return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+var CHIP = { 'รออนุมัติ':'warn', 'อนุมัติแล้ว':'warn', 'จ่ายของออกแล้ว':'', 'คืนไม่ครบ':'warn', 'คืนครบ':'good', 'ไม่อนุมัติ':'bad',
+             'รอตรวจ':'warn', 'ยกเลิก':'bad', 'ยกเลิก (ข้อมูลทดสอบ)':'bad', 'จ่ายออกแล้ว':'good' };   // 
+var CONSENT = 'ข้าพเจ้ายืนยันรายการในเอกสารนี้ และตกลงลงนามด้วยวิธีอิเล็กทรอนิกส์ (พ.ร.บ.ธุรกรรมทางอิเล็กทรอนิกส์ พ.ศ. 2544)';
+
+var TOUCHED = false;
+var ALL_ROWS = [];
+var CUR_FILTER = 'all';
+window.addEventListener('DOMContentLoaded', function(){
+  $('backBtn').href = (window.APP_CONFIG && APP_CONFIG.SITE) || './';   // ลิงก์หน้าแรกรู้อยู่แล้ว ไม่ต้องถามหลังบ้าน (appUrl)
+  $('list').addEventListener('click', onAct);                     // ปุ่มในแต่ละคำขอ
+  $('list').addEventListener('change', onFile);
+  $('filterBar').addEventListener('click', function(ev){
+    var b = ev.target.closest && ev.target.closest('button[data-flt]'); if (!b) return;
+    CUR_FILTER = b.getAttribute('data-flt') || 'all';
+    TOUCHED = true;
+    drawList();
+  });
+
+  $('cancelModalSubmit').addEventListener('click', submitCancel);
+  document.querySelectorAll('[data-cancel-close]').forEach(function(el){ el.addEventListener('click', closeCancelModal); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('cancelModal').hidden) closeCancelModal(); });
+  $('list').addEventListener('click', function(){ TOUCHED = true; }, true);
+  first();
+});
+
+/* เปิดหน้า = แสดงคำขอที่จำไว้ในเครื่องทันที แล้วอัปเดตจากหลังบ้าน (ถ้ากดอะไรไปแล้ว ไม่วาดทับ) */
+function first(){
+  if (!(window.StockAPI && StockAPI.fresh && StockAPI.mine)) return load();
+  var shown = false;
+  StockAPI.fresh(StockAPI.mine('my'), 'myRequests', [], function(rows, cached, at){
+    if (cached) { render(rows); shown = true; $('who').textContent = 'ข้อมูลที่จำไว้ ' + hhmm(at) + ' · กำลังอัปเดต…'; return; }
+    if (shown && TOUCHED) { $('who').textContent = 'มีข้อมูลใหม่ · รีเฟรชหน้าเพื่อดู'; return; }
+    render(rows);
+  }, function(e, had){ if (!had) showFail(e); else $('who').textContent = 'อัปเดตไม่สำเร็จ แสดงข้อมูลที่จำไว้'; });
+}
+function hhmm(t){ var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function showFail(e){
+  $('list').innerHTML = '<div class="app-card" style="color:var(--app-danger)">' + esc((e && e.message) || e) + '</div>';
+  $('who').textContent = '';
+}
+
+/** โหลดใหม่จากหลังบ้าน (หลังลงนาม แนบใบ ยกเลิก) แล้วจำผลไว้ */
+var LOAD_SEQ = 0;
+function load(){
+  var seq = ++LOAD_SEQ;
+  google.script.run.withSuccessHandler(function(rows){
+    if (seq !== LOAD_SEQ) return;
+    if (window.StockAPI && StockAPI.remember && StockAPI.mine) StockAPI.remember(StockAPI.mine('my'), rows);
+    render(rows);
+  }).withFailureHandler(function(e){
+    if (seq !== LOAD_SEQ) return;
+    showFail(e);
+  }).myRequests();
+}
+
+/* ═══ ลงนาม แนบใบ พิมพ์ ยกเลิก ═══ */
+function signHtml(r){
+  if (!(r.eApv || r.eReq || r.signedUrl)) return '';
+  var t = function(ok, s){ return '<span class="sg ' + (ok ? 'ok' : '') + '">' + (ok ? '✓ ' : '○ ') + s + '</span>'; };
+  return '<p class="mb-1 signs">' + t(r.eApv, 'ผู้อนุมัติลงนาม') + t(r.eReq, 'คุณลงนาม') +
+    (r.signedUrl ? '<a class="sg ok" target="_blank" rel="noopener" href="' + esc(r.signedUrl) + '">✓ ใบลงนามที่แนบ</a>' : '') + '</p>';
+}
+function actsHtml(r){
+  var b = [];
+  if (r.canSign) b.push('<button class="btn-app" type="button" data-act="sign" data-id="' + esc(r.id) + '">ลงนามอิเล็กทรอนิกส์</button>');
+  if (r.canUpload) b.push('<label class="btn-app ghost">แนบใบที่ลงนามแล้ว<input type="file" hidden accept="application/pdf,image/jpeg,image/png" data-act="upload" data-id="' + esc(r.id) + '"></label>');
+  if (r.canPrint) b.push('<a class="btn-app ghost" target="_blank" rel="noopener" href="request.html?print=' + encodeURIComponent(r.id) + '">พิมพ์ใบ</a>');
+  if (r.canCancel) b.push('<button class="btn-app ghost danger" type="button" data-act="cancel" data-id="' + esc(r.id) + '">ยกเลิกคำขอ</button>');
+  return b.length ? '<div class="acts">' + b.join('') + '</div>' : '';
+}
+function tt(s){ return window.APP_LANG === 'en' && window.APP_T ? window.APP_T(s) : s; }   // แปลเฉพาะตอนเลือก English
+function busy(id, msg){ $('who').textContent = msg + ' ' + id + '…'; }
+function done(msg){ if (window.StockAPI && StockAPI.invalidate && StockAPI.mine) StockAPI.invalidate(StockAPI.mine('my')); $('who').textContent = msg; load(); }
+function oops(e){ if (window.StockAPI && StockAPI.invalidate && StockAPI.mine) StockAPI.invalidate(StockAPI.mine('my')); $('who').textContent = ''; alert((e && e.message) || String(e)); load(); }
+
+var CANCEL_DIALOG = { id:'', button:null };
+function tx(th, en){ return window.APP_LANG === 'en' ? en : th; }
+function openCancelModal(id, button){
+  CANCEL_DIALOG = { id:id, button:button };
+  $('cancelModalText').textContent = tx('คุณกำลังจะยกเลิกคำขอ ' + id, 'You are about to cancel request ' + id);
+  $('cancelReason').value = '';
+  $('cancelModalHint').textContent = tx('กรุณาระบุเหตุผลเพื่อดำเนินการต่อ', 'A reason is required to continue.');
+  $('cancelModal').hidden = false;
+  $('cancelModal').setAttribute('aria-hidden','false');
+  document.body.classList.add('modal-open');
+  window.setTimeout(function(){ $('cancelReason').focus(); }, 0);
+}
+function closeCancelModal(){
+  $('cancelModal').hidden = true;
+  $('cancelModal').setAttribute('aria-hidden','true');
+  document.body.classList.remove('modal-open');
+}
+function submitCancel(){
+  var why = ($('cancelReason').value || '').trim();
+  if (!why) {
+    $('cancelModalHint').textContent = tx('กรุณาระบุเหตุผลก่อนยืนยันการยกเลิก', 'Please enter a reason before confirming cancellation.');
+    $('cancelReason').focus();
+    return;
+  }
+  var state = CANCEL_DIALOG;
+  closeCancelModal();
+  if (state.button) state.button.disabled = true;
+  busy(state.id, tx('กำลังยกเลิก', 'Cancelling') );
+  google.script.run.withSuccessHandler(function(){ done(tx('ยกเลิกแล้ว ', 'Cancelled ') + state.id); }).withFailureHandler(oops).cancelRequest(state.id, why);
+}
+
+function onAct(ev){
+  var b = ev.target.closest && ev.target.closest('button[data-act]'); if (!b) return;
+  var id = b.getAttribute('data-id'), act = b.getAttribute('data-act');
+  if (act === 'sign') {
+    if (!confirm(tt('ลงนามอิเล็กทรอนิกส์เอกสาร') + ' ' + id + '\n\n' + tt(CONSENT))) return;
+    b.disabled = true; busy(id, 'กำลังลงนาม');
+    google.script.run.withSuccessHandler(function(){ done('ลงนามแล้ว ' + id); }).withFailureHandler(oops).signRequest(id);
+  } else if (act === 'cancel') {
+    openCancelModal(id, b);
+  }
+}
+function onFile(ev){
+  var inp = ev.target; if (!inp || inp.getAttribute('data-act') !== 'upload') return;
+  var f = inp.files && inp.files[0], id = inp.getAttribute('data-id'); if (!f) return;
+  if (f.size > 10 * 1024 * 1024) { alert(tt('ไฟล์ใหญ่เกิน 10 MB')); return; }
+  busy(id, 'กำลังอัปโหลดใบลงนาม');
+  var rd = new FileReader();
+  rd.onload = function(){
+    google.script.run.withSuccessHandler(function(up){
+      google.script.run.withSuccessHandler(function(){ done('แนบใบลงนามแล้ว ' + id); }).withFailureHandler(oops).attachSigned(id, up.url);
+    }).withFailureHandler(oops).uploadAttachment({ name: 'ใบลงนาม ' + id + ' ' + f.name, mimeType: f.type, data: String(rd.result).split(',')[1] || '' });
+  };
+  rd.readAsDataURL(f);
+}
+
+function rowStatus(r){ return String(r && r.status || '').trim(); }
+function isCancelledRow(r){
+  var s = rowStatus(r);
+  return s === 'ยกเลิก' || s === 'ยกเลิก (ข้อมูลทดสอบ)';
+}
+function isDoneRow(r){
+  var s = rowStatus(r);
+  return s === 'คืนครบ' || s === 'จ่ายออกแล้ว' || s === 'ไม่อนุมัติ' || isCancelledRow(r);
+}
+function render(rows){
+  $('who').textContent = '';
+  ALL_ROWS = rows || [];
+  if (!ALL_ROWS.length){
+    $('filterBar').hidden = true;
+    $('list').innerHTML = '<div class="app-card"><p class="mb-0">ยังไม่มีคำขอ</p></div>';
+    return;
+  }
+  drawList();
+}
+function drawList(){
+  var activeCnt = 0, doneCnt = 0;
+  ALL_ROWS.forEach(function(r){ if (isDoneRow(r)) doneCnt++; else activeCnt++; });
+  if (ALL_ROWS.length > 1) {
+    var tabs = [
+      { k:'all', label:'ทั้งหมด', c:ALL_ROWS.length },
+      { k:'active', label:'กำลังดำเนินการ / ค้างคืน', c:activeCnt },
+      { k:'done', label:'เสร็จสิ้น / ปิดแล้ว', c:doneCnt }
+    ];
+    $('filterBar').hidden = false;
+    $('filterBar').innerHTML = tabs.map(function(t){
+      return '<button type="button" class="flt-btn ' + (CUR_FILTER === t.k ? 'on' : '') + '" data-flt="' + t.k + '">' +
+        '<span>' + t.label + '</span><span class="cnt">' + t.c + '</span></button>';
+    }).join('');
+  } else {
+    $('filterBar').hidden = true;
+  }
+  var shown = ALL_ROWS.filter(function(r){
+    if (CUR_FILTER === 'active') return !isDoneRow(r);
+    if (CUR_FILTER === 'done') return isDoneRow(r);
+    return true;
+  });
+  if (!shown.length){
+    $('list').innerHTML = '<div class="app-card"><p class="mb-0 hint">ไม่มีคำขอในหมวดนี้</p></div>';
+    return;
+  }
+  $('list').innerHTML = shown.map(function(r){
+    var lines = (r.lines || []).map(function(l){
+      // A cancelled request is closed; show no outstanding return without changing backend data.
+      var remaining = isCancelledRow(r) ? 0 : l.remaining;
+      return '<tr><td>' + esc(l.code) + '</td><td>' + esc(l.name) + '</td><td class="num">' + l.qty + '</td><td class="num">' + l.back + '</td><td class="num">' + remaining + '</td></tr>';
+    }).join('');
+    return '<div class="app-card">' +
+      '<div class="d-flex flex-wrap justify-content-between gap-2 align-items-center">' +
+        '<h2 class="mb-0">' + esc(r.id) + (r.kind ? ' <span class="chip kind">' + esc(r.kind) + '</span>' : '') + '</h2>' +
+        '<span class="chip ' + (CHIP[r.status] || '') + '">' + esc(r.label) + '</span>' +
+      '</div>' +
+      '<p class="hint mt-2 mb-1">สร้างเมื่อ ' + esc(r.created) + (r.dueDate ? ' · กำหนดคืน ' + esc(r.dueDate) : '') + '</p>' +
+      (r.purpose ? '<p class="mb-1">' + esc(r.purpose) + '</p>' : '') +
+      (r.returnPending ? '<p class="mb-1"><span class="chip warn">มีคำขอคืน ' + r.returnPending + ' ฉบับ รอแอดมินตรวจรับ</span></p>' : '') +
+      (r.reviewNote ? '<p class="mb-1 hint">ความเห็นแอดมิน: ' + esc(r.reviewNote) + '</p>' : '') +
+      signHtml(r) + actsHtml(r) +
+      '<div class="lines"><table><thead><tr><th>รหัส</th><th>รายการ</th><th>เบิก</th><th>คืนแล้ว</th><th>ค้างคืน</th></tr></thead><tbody>' + lines + '</tbody></table></div>' +
+      '</div>';
+  }).join('');
+}
+</script>
+</body>
+</html>

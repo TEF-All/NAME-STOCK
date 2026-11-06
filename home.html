@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<!-- หน้าเว็บบน GitHub Pages เรียกหลังบ้านผ่าน assets/api.js (google.script.run แบบเดิม) -->
+<link rel="preconnect" href="https://script.google.com" crossorigin>
+<link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/i18n.js"></script>
+<script src="assets/shell.js"></script>
+<base target="_top">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>หน้าแรก — {{APP}}</title>
+<style>
+:root{--navy:#0A2342;--line:#e3e8ef;--bg:#f4f6fa;--mut:#64748b;--ok:#15803d;--warn:#b45309;--bad:#b91c1c;--blue:#1d4ed8}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#1e293b;font:15px/1.55 Sarabun,"Noto Sans Thai",system-ui,sans-serif}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 16px 72px}
+h1{font-size:26px;margin:0 0 6px;color:var(--navy)}
+h2{font-size:18px;margin:26px 0 12px;color:var(--navy)}
+.sub{color:var(--mut);font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;background:#e0e9f7;color:var(--navy);font-size:12.5px;font-weight:600;vertical-align:middle}
+.grid{display:grid;gap:12px}
+.menu{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+a.mc{display:block;text-decoration:none;color:inherit;transition:box-shadow .15s,transform .15s}
+a.mc:hover{box-shadow:0 6px 18px rgba(10,35,66,.12);transform:translateY(-2px)}
+.mc .ic{width:40px;height:40px;border-radius:10px;background:#e7eef8;color:var(--navy);display:flex;align-items:center;justify-content:center;font-size:20px;line-height:1}
+.mc .t{font-weight:700;color:var(--navy);margin-top:10px}
+.mc .d{font-size:13.5px;color:var(--mut);margin-top:2px}
+.stats{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}
+a.st{display:block;text-decoration:none;color:inherit;text-align:center}
+.st .n{font-size:32px;font-weight:800;color:var(--navy);line-height:1.1}
+.st.hot .n{color:var(--bad)}
+.st .l{font-size:13px;color:var(--mut)}
+.item{display:flex;flex-wrap:wrap;gap:10px 16px;align-items:flex-start;justify-content:space-between}
+.item+.item{margin-top:10px}
+.item .main{flex:1 1 320px;min-width:0}
+.item .id{font-weight:700;color:var(--navy)}
+.meta{font-size:13.5px;color:var(--mut)}
+.lines{margin:6px 0 0;padding-left:18px;font-size:14px}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-size:14px;border:1px solid var(--navy);background:var(--navy);color:#fff;border-radius:10px;padding:8px 16px;cursor:pointer}
+button.ghost{background:#fff;color:var(--navy)}
+button.bad{background:#fff;color:var(--bad);border-color:#e7b4b4}
+button.arm{background:var(--warn);border-color:var(--warn);color:#fff}
+button:disabled{opacity:.6;cursor:default}
+input[type=text]{font:inherit;font-size:14px;padding:7px 10px;border:1px solid #cbd5e1;border-radius:8px;min-width:200px}
+.empty{color:var(--mut);padding:6px 2px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--mut);font-weight:600;font-size:13px}
+.off{opacity:.55}
+.tag{font-size:12px;padding:1px 8px;border-radius:999px;background:#fee2e2;color:var(--bad)}
+.tag.ok{background:#dcfce7;color:var(--ok)}
+.scroll{overflow-x:auto}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 18px;border-radius:10px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90vw;z-index:99}
+#toast.show{opacity:1}#toast.err{background:var(--bad)}
+.loading{padding:40px 0;text-align:center;color:var(--mut)}
+.err-box{background:#fef2f2;border:1px solid #fecaca;color:var(--bad);border-radius:12px;padding:14px 16px}
+.notice{margin-top:12px;background:#fff7e0;border:1px solid #f3d98b;color:#b91c1c;border-radius:12px;padding:10px 14px;white-space:pre-wrap}
+.mh{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ed{margin-bottom:14px}
+.frow{margin-top:12px;display:flex;flex-direction:column;gap:4px}
+.frow label,.lbl{font-size:13px;color:var(--mut);font-weight:600}
+.lbl{margin-top:16px}
+textarea{font:inherit;font-size:14px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;width:100%}
+input[type=text]{width:100%}
+.chk{display:inline-flex;align-items:center;gap:4px;font-size:14px;color:#1e293b;font-weight:400;white-space:nowrap}
+.erow{display:flex;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.erow.off{opacity:.55}
+.erow .mv{display:flex;flex-direction:column;gap:3px}
+button.sm{padding:1px 8px;font-size:11px;border-radius:6px}
+.erow .ico{width:62px;text-align:center;font-size:20px}
+.erow .mid{flex:1 1 260px;display:flex;flex-direction:column;gap:5px;min-width:0}
+.eb{display:inline-flex;align-items:center;gap:6px;padding:8px 14px}.eb .short{display:none}
+@media(max-width:600px){
+.wrap{padding:18px 16px 40px}
+h2{font-size:17px;margin:20px 0 10px}
+.menu{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+a.mc{padding:14px}
+.mc .t{font-size:14.5px;margin-top:8px}
+.mc .d{font-size:13px}
+.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.item .btns{width:100%;display:flex}
+.item .btns button{flex:1;font-size:15px;padding:11px 8px}
+.eb .long{display:none}.eb .short{display:inline}
+}
+/* workflow */
+.grid.stats.five{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.chip.borrow{background:#e0e9f7;color:#0A2342}.chip.give{background:#fdf0dc;color:#8a4b00}
+.signs{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.sg{font-size:12.5px;padding:2px 8px;border-radius:999px;border:1px solid #d5dde8;text-decoration:none}
+.sg.ok{background:#e9f7f0;color:#09614a;border-color:#bfe3d1}.sg.no{background:#fff;color:#5b6b80}.sg.bad{background:#fdecec;color:#a1121a;border-color:#f3c4c4}
+.lines li.short{color:#a1121a;font-weight:600}
+.btnlike{display:inline-flex;align-items:center;justify-content:center;flex:1;font-size:15px;padding:11px 8px;border:1px solid #c3cdde;border-radius:10px;background:#fff;color:#0A2342;text-decoration:none;cursor:pointer;font-weight:600}
+
+.confirm-modal[hidden]{display:none!important}
+.confirm-modal{position:fixed;inset:0;z-index:100;display:grid;place-items:center;padding:18px}
+.confirm-modal-backdrop{position:absolute;inset:0;background:rgba(18,42,82,.62);backdrop-filter:blur(2px)}
+.confirm-modal-panel{position:relative;width:min(100%,520px);background:#fff;border:1px solid var(--line2);border-radius:14px;box-shadow:0 20px 60px rgba(18,42,82,.28);padding:24px}
+.confirm-modal-panel h2{margin:0 0 8px;font-size:20px;color:var(--navy900)}
+.confirm-modal-panel h2::before{content:"";display:inline-block;width:4px;height:20px;background:var(--navy600);border-radius:2px;margin-right:9px;vertical-align:-2px}
+.confirm-modal-panel p{margin:0;color:var(--muted);line-height:1.65}
+.confirm-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}
+.confirm-modal-actions button{min-width:120px}
+.confirm-modal-actions .ghost{color:var(--muted);background:#fff;border:1px solid var(--line2)}
+body.confirm-modal-open{overflow:hidden}
+
+/* v36 role-aware home */
+.home-hero{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:14px;padding:24px 26px;background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 24px rgba(10,35,66,.06)}
+.home-hero .hero-copy{min-width:0}
+.home-hero h1{margin:0 0 6px;font-size:28px;color:var(--navy)}
+.home-hero .hero-name{font-size:17px;font-weight:700;color:#1e293b}
+.home-hero .hero-sub{margin:6px 0 0;color:var(--mut);font-size:14px}
+.home-hero .hero-role{margin-top:10px}
+.home-hero .hero-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;flex:0 0 auto}
+.home-hero a{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:9px 16px;border-radius:10px;text-decoration:none;font-weight:700;white-space:nowrap}
+.home-hero .hero-primary{background:var(--navy);color:#fff;border:1px solid var(--navy)}
+.home-hero .hero-secondary{background:#fff;color:var(--navy);border:1px solid #cbd5e1}
+.home-hero.role-admin{border-top:4px solid var(--navy)}
+.home-hero.role-staff{border-top:4px solid #2563eb}
+.home-hero.role-external{border-top:4px solid #15803d}
+@media(max-width:700px){
+  .home-hero{display:block;padding:20px}
+  .home-hero .hero-actions{justify-content:flex-start;margin-top:16px}
+  .home-hero a{flex:1 1 180px;min-width:0;white-space:normal;text-align:center;overflow-wrap:anywhere}
+}
+
+/* role-aware home layout */
+.home-task-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.home-task{display:flex;align-items:flex-start;gap:12px;min-height:118px;text-decoration:none;color:inherit}
+.home-task:hover{box-shadow:0 8px 20px rgba(10,35,66,.12);transform:translateY(-2px)}
+.home-task .task-ic{width:42px;height:42px;flex:0 0 42px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:#e7eef8;font-size:22px}
+.home-task .task-title{font-weight:800;color:var(--navy);font-size:16px}
+.home-task .task-desc{margin-top:4px;color:var(--mut);font-size:13.5px}
+.home-status{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.home-status .status-card{min-height:92px}
+.home-status .status-title{font-weight:800;color:var(--navy)}
+.home-status .status-copy{margin-top:4px;color:var(--mut);font-size:13.5px}
+.home-status .status-link{display:inline-flex;margin-top:10px;color:var(--blue);font-size:13.5px;font-weight:700;text-decoration:none}
+.home-recent{display:flex;flex-direction:column;gap:0}
+.recent-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.recent-row:last-child{border-bottom:0}
+.recent-thumb{width:48px;height:48px;flex:0 0 48px;object-fit:cover;border-radius:10px;background:#eef2f7;border:1px solid var(--line)}
+.recent-placeholder{width:48px;height:48px;flex:0 0 48px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#eef2f7;color:var(--mut);font-size:20px}
+.recent-main{min-width:0;flex:1}
+.recent-code{font-weight:800;color:var(--navy)}
+.recent-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-help-grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.home-help a{color:var(--blue);font-weight:700;text-decoration:none}
+.home-help .help-title{font-weight:800;color:var(--navy)}
+.home-help .help-copy{margin-top:4px;color:var(--mut);font-size:13.5px}
+.home-empty-action{margin-top:10px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="app"><div class="loading">กำลังโหลด…</div></div>
+</div>
+<div id="toast"></div>
+<script>
+var MENU = {
+  index:   ['📦', 'เบิก · จ่าย · คืน · ย้าย', 'ทำรายการพัสดุ เบิก คืน และย้ายที่เก็บ'],
+  count:   ['🔢', 'ตรวจนับ', 'นับของจริงเทียบกับยอดในระบบ'],
+  dash:    ['📊', 'สรุปภาพรวม', 'ยอดคงเหลือ และความเคลื่อนไหวพัสดุ'],
+  admin:   ['⚙️', 'ผู้ดูแลระบบ', 'ตั้งค่า ผู้ใช้ และงานดูแลระบบ'],
+  my:      ['📋', 'คำขอของฉัน', 'ติดตามเอกสารเบิกของฉัน']
+};
+var SVGP = {
+  index:'<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><path d="M3 8l9 5 9-5M12 13v8"/>',
+  count:'<path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>',
+  dash:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+  admin:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  my:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h4"/>'
+};
+var PENCIL = '<path d="M4 20l4-1 11-11-3-3L5 16l-1 4z"/>';
+function svgIcon(p, sz){ return '<svg width="'+sz+'" height="'+sz+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+p+'</svg>'; }
+var B = null;
+function $(s){ return document.querySelector(s); }
+function el(tag, cls, txt){ var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
+function toast(msg, isErr){
+  var t = $('#toast'); t.textContent = msg; t.className = (isErr ? 'err ' : '') + 'show';
+  clearTimeout(toast._t); toast._t = setTimeout(function(){ t.className = ''; }, 3800);
+}
+function fail(err){
+  var b = el('div', 'err-box', 'เปิดหน้าแรกไม่ได้: ' + (err && err.message ? err.message : err));
+  $('#app').replaceChildren(b);
+}
+function load(){
+  google.script.run.withSuccessHandler(function(b){ B = b; render(); }).withFailureHandler(fail).homeBoot();
+}
+/* เปิดหน้าแรก แสดงที่จำไว้ทันที แล้วอัปเดต · ถ้าผู้ใช้เริ่มกดอะไรแล้ว ไม่วาดทับ ให้ปุ่มรีเฟรชแทน */
+var TOUCHED = false;
+function firstLoad(){
+  if (!(window.StockAPI && StockAPI.fresh)) return load();
+  document.addEventListener('click', function(e){ if (e.target.closest && e.target.closest('#app')) TOUCHED = true; }, true);
+  document.addEventListener('input', function(){ TOUCHED = true; }, true);
+  StockAPI.fresh('home', 'homeBoot', [], function(b, cached){
+    if (!cached && TOUCHED && B) { toast('มีข้อมูลใหม่ กดรีเฟรชหน้าเพื่อดู'); return; }
+    B = b; render();
+  }, function(e, had){ if (!had) fail(e); else toast('อัปเดตไม่สำเร็จ แสดงข้อมูลที่จำไว้', true); });
+}
+var CONFIRM_RUN = null;
+function closeConfirmModal(){
+  $('#confirmModal').hidden = true;
+  $('#confirmModal').setAttribute('aria-hidden','true');
+  document.body.classList.remove('confirm-modal-open');
+  CONFIRM_RUN = null;
+}
+function openConfirmModal(message, run){
+  CONFIRM_RUN = run;
+  $('#confirmModalText').textContent = message;
+  $('#confirmModal').hidden = false;
+  $('#confirmModal').setAttribute('aria-hidden','false');
+  document.body.classList.add('confirm-modal-open');
+  setTimeout(function(){ $('#confirmModalSubmit').focus(); }, 0);
+}
+function bindConfirmModal(){
+  var submit = $('#confirmModalSubmit');
+  if (!submit) return;
+  submit.addEventListener('click', function(){
+    var run = CONFIRM_RUN;
+    closeConfirmModal();
+    if (run) run();
+  });
+  document.querySelectorAll('[data-confirm-close]').forEach(function(el){ el.addEventListener('click', closeConfirmModal); });
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !$('#confirmModal').hidden) closeConfirmModal(); });
+}
+document.addEventListener('DOMContentLoaded', bindConfirmModal);
+function twoStep(btn, confirmText, run){
+  var orig = btn.textContent;
+  btn.addEventListener('click', function(){
+    if (btn.disabled) return;
+    var msg = window.APP_LANG === 'en' && window.APP_T ? window.APP_T(confirmText) : confirmText;
+    openConfirmModal(msg, function(){
+      btn.disabled = true; btn.textContent = homeTx('กำลังดำเนินการ…', 'Processing…'); run(btn, orig);
+    });
+  });
+}
+function act(fn, args, btn, orig, okMsg){
+  var r = google.script.run
+    .withSuccessHandler(function(){ toast(okMsg); load(); })
+    .withFailureHandler(function(e){ toast((e && e.message) || String(e), true); if (btn){ btn.disabled = false; btn.classList.remove('arm'); btn.textContent = orig; } });
+  r[fn].apply(r, args);
+}
+function section(title, count, id){
+  var h = el('h2', null, title + (count != null ? '  (' + count + ')' : '')); if (id) h.id = id; return h;
+}
+function linesList(lines){
+  var ul = el('ul', 'lines');
+  (lines || []).forEach(function(l){ ul.appendChild(el('li', null, l.name + ' × ' + l.qty)); });
+  return ul;
+}
+
+function roleKind(){
+  if (B && B.isAdmin) return 'admin';
+  if (B && BRAND.isStaff(B.email)) return 'staff';
+  return 'external';
+}
+function homeTx(th, en){
+  return window.APP_LANG === 'en' ? en : th;
+}
+function homeDataTx(value){
+  if (Array.isArray(value)) return value.map(homeDataTx).join(', ');
+  var text = String(value == null ? '' : value);
+  if (window.APP_LANG !== 'en' || !window.APP_T) return text;
+  var translated = window.APP_T(text);
+  if (translated !== text || text.indexOf(',') < 0) return translated;
+  return text.split(/\s*,\s*/).map(function(part){ return window.APP_T(part); }).join(', ');
+}
+function roleEnglish(kind){
+  return kind === 'admin' ? 'Admin' : (kind === 'staff' ? 'Staff' : 'External user');
+}
+function roleDescription(kind){
+  if (kind === 'admin') return homeTx('งานที่ต้องดำเนินการของผู้ดูแล', 'Admin tasks waiting for action');
+  if (kind === 'staff') return homeTx('จัดการพัสดุและติดตามคำขอของคุณ', 'Manage stock requests and track your work');
+  return homeTx('ขอเบิก ติดตามสถานะ และแจ้งคืน', 'Request items, track status, and report returns');
+}
+function adminFirstTarget(){
+  var A = B && B.admin || {};
+  if ((A.toReview || []).length) return '#sec-review';
+  if ((A.toDispatch || []).length) return '#sec-dispatch';
+  if ((A.returns || []).length) return '#sec-return';
+  if ((A.overdue || []).length) return '#sec-overdue';
+  return hasMenuPage('admin') ? pageHref('admin') : pageHref('dash');
+}
+function renderHomeHero(app){
+  var kind = roleKind();
+  var hero = el('section', 'home-hero role-' + kind);
+  var copy = el('div', 'hero-copy');
+  copy.appendChild(el('h1', null, homeTx('ยินดีต้อนรับ', 'Welcome')));
+  var displayName = [B.greet, B.name].filter(Boolean).join(' ');
+  if (displayName) copy.appendChild(el('div', 'hero-name', displayName));
+  copy.appendChild(el('div', 'hero-sub', roleDescription(kind)));
+  var role = el('div', 'hero-role');
+  var roleText = window.APP_LANG === 'en'
+    ? (window.APP_T && B.roleLabel ? window.APP_T(B.roleLabel) : roleEnglish(kind))
+    : (B.roleLabel || 'ผู้ใช้งาน');
+  role.appendChild(el('span', 'chip', roleText));
+  if (B.email) role.appendChild(document.createTextNode('  ' + B.email));
+  copy.appendChild(role);
+  hero.appendChild(copy);
+
+  var actions = el('div', 'hero-actions');
+  var primary = el('a', 'hero-primary');
+  if (kind === 'admin') {
+    primary.textContent = homeTx('ไปยังงานที่ต้องดำเนินการ', 'View pending work');
+    primary.href = adminFirstTarget();
+  } else {
+    primary.textContent = kind === 'staff' ? homeTx('สร้างรายการใหม่', 'New request') : homeTx('เริ่มขอเบิก', 'Start a request');
+    primary.href = B.base + '?page=index';
+    var secondary = el('a', 'hero-secondary', homeTx('คำขอของฉัน', 'My requests'));
+    secondary.href = B.base + '?page=my';
+    actions.appendChild(secondary);
+  }
+  actions.appendChild(primary);
+  if (kind === 'admin') {
+    var dash = el('a', 'hero-secondary', homeTx('ดูสรุปภาพรวม', 'Dashboard'));
+    dash.href = B.base + '?page=dash';
+    actions.appendChild(dash);
+  }
+  hero.appendChild(actions);
+  app.appendChild(hero);
+}
+
+function hasMenuPage(page){
+  return (B && B.menu || []).some(function(x){ return x.page === page; });
+}
+function pageHref(page){
+  return (B && B.base ? B.base : '') + '?page=' + encodeURIComponent(page);
+}
+function homeTask(href, icon, title, desc){
+  var a = el('a', 'card home-task');
+  a.href = href;
+  a.target = '_top';
+  a.appendChild(el('div', 'task-ic', icon));
+  var copy = el('div');
+  copy.appendChild(el('div', 'task-title', title));
+  copy.appendChild(el('div', 'task-desc', desc));
+  a.appendChild(copy);
+  return a;
+}
+function renderMainTasks(app){
+  var kind = roleKind();
+  var tasks = [];
+  if (kind === 'admin') {
+    tasks.push([adminFirstTarget(), '✅', homeTx('ตรวจงานค้าง', 'Review pending work'), homeTx('ดูคำขอที่รอตรวจ อนุมัติ หรือดำเนินการต่อ', 'Review, approve, and process pending requests')]);
+    if (hasMenuPage('admin')) tasks.push([pageHref('admin'), '⚙️', homeTx('จัดการระบบ', 'Manage system'), homeTx('ผู้ใช้ สิทธิ์ และการตั้งค่าที่เกี่ยวข้อง', 'Users, access, and related settings')]);
+    if (hasMenuPage('dash')) tasks.push([pageHref('dash'), '📊', homeTx('ดูภาพรวม', 'View overview'), homeTx('ตรวจยอดคงเหลือและความเคลื่อนไหว', 'Check balances and inventory movements')]);
+  } else if (kind === 'staff') {
+    tasks.push([pageHref('index'), '📦', homeTx('ทำรายการใหม่', 'New request'), homeTx('เบิก จ่าย คืน หรือย้ายพัสดุ', 'Borrow, issue, return, or transfer items')]);
+    if (hasMenuPage('my')) tasks.push([pageHref('my'), '📋', homeTx('ติดตามคำขอของฉัน', 'Track my requests'), homeTx('ดูสถานะเอกสารและรายการที่เคยส่ง', 'View document status and submitted items')]);
+    if (hasMenuPage('count')) tasks.push([pageHref('count'), '🔢', homeTx('ตรวจนับพัสดุ', 'Count stock'), homeTx('นับของจริงเทียบกับยอดในระบบ', 'Count physical stock against system balances')]);
+  } else {
+    tasks.push([pageHref('index'), '📝', homeTx('เริ่มขอเบิก', 'Start a request'), homeTx('เลือกพัสดุและส่งคำขอให้เจ้าหน้าที่', 'Choose items and send a request to staff')]);
+    if (hasMenuPage('my')) tasks.push([pageHref('my'), '📋', homeTx('ติดตามคำขอ', 'Track requests'), homeTx('ตรวจสถานะคำขอและแจ้งคืน', 'Check request status and report returns')]);
+    if (hasMenuPage('stock')) tasks.push([pageHref('stock'), '🔎', homeTx('ค้นหาพัสดุ', 'Browse inventory'), homeTx('ดูรายการพัสดุที่เปิดให้ค้นหา', 'Browse items available to search')]);
+  }
+  if (!tasks.length) return;
+  app.appendChild(section(homeTx('งานหลักของคุณ', 'Main tasks'), null, 'sec-main-tasks'));
+  var g = el('div', 'grid home-task-grid');
+  tasks.forEach(function(t){ g.appendChild(homeTask(t[0], t[1], t[2], t[3])); });
+  app.appendChild(g);
+}
+function renderUserStatus(app){
+  if (B.isAdmin) return;
+  app.appendChild(section(homeTx('สถานะคำขอ', 'Request status'), null, 'sec-user-status'));
+  var g = el('div', 'grid home-status');
+  var cards = [];
+  if (B.status && Array.isArray(B.status.cards)) cards = B.status.cards;
+  if (!cards.length && B.myRequestsCount != null) {
+    cards.push({title:homeTx('คำขอของฉัน', 'My Requests'), copy:homeTx('มี ' + B.myRequestsCount + ' รายการในระบบ', B.myRequestsCount + ' request(s) in the system'), href:hasMenuPage('my') ? pageHref('my') : ''});
+  }
+  if (!cards.length) {
+    cards.push({title:homeTx('ติดตามงานของคุณ', 'Track your requests'), copy:homeTx('สถานะเอกสารจะแสดงในหน้า “คำขอของฉัน” เมื่อมีรายการที่ส่งเข้าระบบ', 'Document status will appear in “My Requests” once you submit a request.'), href:hasMenuPage('my') ? pageHref('my') : pageHref('index')});
+  }
+  cards.forEach(function(c){
+    var box = el('div', 'card status-card');
+    box.appendChild(el('div', 'status-title', c.title || homeTx('สถานะล่าสุด', 'Latest status')));
+    box.appendChild(el('div', 'status-copy', c.copy || c.text || ''));
+    if (c.href) {
+      var a = el('a', 'status-link', homeTx('เปิดดูรายละเอียด', 'Open details'));
+      a.href = c.href; a.target = '_top'; box.appendChild(a);
+    }
+    g.appendChild(box);
+  });
+  app.appendChild(g);
+}
+function renderRecentAndHelp(app){
+  var kind = roleKind();
+  app.appendChild(section(homeTx('รายการล่าสุดหรือพัสดุที่ใช้บ่อย', 'Recent or frequently used items'), null, 'sec-recent'));
+  var recent = B.recentItems || B.recent || B.frequentItems || [];
+  if (!Array.isArray(recent) || !recent.length) {
+    var empty = el('div', 'card');
+    empty.appendChild(el('div', 'empty', homeTx('ยังไม่มีรายการล่าสุด รายการจะแสดงเมื่อเริ่มใช้งาน', 'No recent items yet. Items will appear as you start using the system.')));
+    if (hasMenuPage('stock')) {
+      var a = el('a', 'btnlike home-empty-action', homeTx('ค้นหารายการพัสดุ', 'Browse stock'));
+      a.href = pageHref('stock'); a.target = '_top'; empty.appendChild(a);
+    }
+    app.appendChild(empty);
+  } else {
+    var box = el('div', 'card home-recent');
+    recent.slice(0, 8).forEach(function(item){
+      item = item || {};
+      var row = el('div', 'recent-row');
+      var image = item.imageUrl || item.thumbUrl || item.image || '';
+      if (image) {
+        var img = el('img', 'recent-thumb');
+        img.src = image; img.alt = item.name || item.title || item.code || homeTx('พัสดุ', 'Stock item');
+        img.loading = 'lazy'; img.decoding = 'async'; row.appendChild(img);
+      } else {
+        row.appendChild(el('div', 'recent-placeholder', '📦'));
+      }
+      var main = el('div', 'recent-main');
+      main.appendChild(el('div', 'recent-code', item.code || item.id || ''));
+      main.appendChild(el('div', 'recent-name', item.name || item.title || homeTx('รายการพัสดุ', 'Stock item')));
+      if (item.meta || item.updated) main.appendChild(el('div', 'meta', item.meta || item.updated));
+      row.appendChild(main); box.appendChild(row);
+    });
+    app.appendChild(box);
+  }
+
+  app.appendChild(section(homeTx('วิธีใช้งานและแจ้งปัญหา', 'Help & support'), null, 'sec-help'));
+  var help = el('div', 'grid home-help-grid home-help');
+
+  var guide = el('div', 'card');
+  var guideTitle = kind === 'admin'
+    ? homeTx('วิธีเริ่มงาน', 'Getting started')
+    : kind === 'staff'
+      ? homeTx('เริ่มทำรายการ', 'Start a request')
+      : homeTx('เริ่มต้นใช้งาน', 'Get started');
+  var guideCopy = kind === 'admin'
+    ? homeTx('ตรวจงานที่รอ แล้วตรวจรหัส รูปภาพ และจำนวนก่อนอนุมัติหรือดำเนินการต่อ', 'Review pending work, then check the code, image, and quantity before approving or continuing.')
+    : kind === 'staff'
+      ? homeTx('เลือกงาน ตรวจรายการพร้อมรูปภาพ ส่งคำขอ และติดตามสถานะ', 'Choose a task, check the item with its image, submit the request, and track its status.')
+      : homeTx('ค้นหารายการ ตรวจรูปภาพและจำนวน ส่งคำขอ และติดตามสถานะ', 'Browse items, check the image and quantity, submit a request, and track its status.');
+  guide.appendChild(el('div', 'help-title', guideTitle));
+  guide.appendChild(el('div', 'help-copy', guideCopy));
+  var guideLink = el('a', 'home-help-link', kind === 'admin'
+    ? homeTx('เปิดงานที่ต้องดำเนินการ', 'Open pending work')
+    : homeTx('เริ่มรายการใหม่', 'Start a request'));
+  guideLink.href = kind === 'admin' ? adminFirstTarget() : pageHref('index');
+  guideLink.target = '_top';
+  guide.appendChild(guideLink);
+  help.appendChild(guide);
+
+  var support = el('div', 'card');
+  support.appendChild(el('div', 'help-title', homeTx('ติดต่อผู้ดูแล', 'Contact support')));
+  var email = B.supportEmail || BRAND.support;
+  var mail = el('a', null, email); mail.href = 'mailto:' + email;
+  var copy = el('div', 'help-copy', homeTx(
+    'หากพบปัญหา โปรดแจ้งรหัสรายการ ภาพหน้าจอ และเวลาที่เกิดปัญหา',
+    'If something goes wrong, include the request ID, a screenshot, and the time of the issue.'
+  ));
+  support.appendChild(mail); support.appendChild(copy); help.appendChild(support);
+
+  var rules = el('div', 'card');
+  rules.appendChild(el('div', 'help-title', homeTx('ตรวจสอบก่อนยืนยัน', 'Before confirming')));
+  rules.appendChild(el('div', 'help-copy', homeTx(
+    'ตรวจสอบรหัส รายการ รูปภาพ จำนวน และปลายทางให้ถูกต้องทุกครั้ง',
+    'Check the code, item, image, quantity, and destination before confirming.'
+  )));
+  help.appendChild(rules);
+  app.appendChild(help);
+}
+function render(){
+  var app = $('#app'); app.replaceChildren();
+  renderHomeHero(app);
+  if (B.notice) app.appendChild(el('div', 'notice', B.notice));
+  renderMainTasks(app);
+  renderUserStatus(app);
+
+  if (B.isAdmin && B.admin) renderAdmin(app, B.admin);
+
+  var mh = el('div', 'mh'); mh.appendChild(el('h2', null, homeTx('ทางลัด', 'Quick actions')));
+  var box = el('div'); box.style.display = 'none';
+  if (B.isAdmin && B.edit) {
+    var eb = el('button', 'ghost eb'); eb.innerHTML = svgIcon(PENCIL, 16) + '<span class="long">แก้ไขหน้าแรก</span><span class="short">แก้ไข</span>'; mh.appendChild(eb);
+    eb.addEventListener('click', function(){
+      if (box.style.display === 'none') { renderEditor(box); box.style.display = 'block'; } else { box.style.display = 'none'; }
+    });
+  }
+  app.appendChild(mh); app.appendChild(box);
+  var g = el('div', 'grid menu');
+  B.menu.forEach(function(d){
+    var a = el('a', 'card mc'); a.target = '_top'; a.href = B.base + '?page=' + d.page;
+    var ic = el('div', 'ic'); if (SVGP[d.page]) ic.innerHTML = svgIcon(SVGP[d.page], 22); else ic.textContent = d.icon; a.appendChild(ic); a.appendChild(el('div', 't', d.title));
+    g.appendChild(a);
+  });
+  app.appendChild(g);
+  renderRecentAndHelp(app);
+}
+
+function renderEditor(box){
+  var E = JSON.parse(JSON.stringify(B.edit));
+  var NAMES = { index: 'เบิก/จ่าย/คืน/ย้าย', count: 'ตรวจนับ', dash: 'สรุปภาพรวม', admin: 'ผู้ดูแลระบบ', my: 'คำขอของฉัน' };
+  box.replaceChildren();
+  var c = el('div', 'card ed');
+  c.appendChild(el('div', 'id', 'แก้ไขหน้าแรก'));
+  c.appendChild(el('div', 'meta', 'มีผลกับทุกคนที่เปิดหน้าแรก · การซ่อนการ์ดเป็นการซ่อนบนหน้าแรกเท่านั้น ไม่ได้ปิดสิทธิ์เข้าหน้านั้น'));
+
+  var r1 = el('div', 'frow'); r1.appendChild(el('label', null, 'คำทักทาย'));
+  var gi = el('input'); gi.type = 'text'; gi.maxLength = 30; gi.value = E.greet || '';
+  gi.addEventListener('input', function(){ E.greet = gi.value; }); r1.appendChild(gi); c.appendChild(r1);
+
+  var r2 = el('div', 'frow'); r2.appendChild(el('label', null, 'ประกาศ (แสดงเป็นแถบสีเหลือง)'));
+  var ta = el('textarea'); ta.rows = 2; ta.maxLength = 300; ta.value = E.notice.text || '';
+  ta.addEventListener('input', function(){ E.notice.text = ta.value; }); r2.appendChild(ta);
+  var lb = el('label', 'chk'); var ck = el('input'); ck.type = 'checkbox'; ck.checked = !!E.notice.show;
+  ck.addEventListener('change', function(){ E.notice.show = ck.checked; });
+  lb.appendChild(ck); lb.appendChild(document.createTextNode(' แสดงประกาศ')); r2.appendChild(lb); c.appendChild(r2);
+
+  c.appendChild(el('div', 'lbl', 'การ์ดเมนู (ลำดับตามรายการ)'));
+  var list = el('div'); c.appendChild(list);
+  function draw(){
+    list.replaceChildren();
+    E.menu.forEach(function(it, i){
+      var row = el('div', 'erow' + (it.show ? '' : ' off'));
+      var mv = el('div', 'mv');
+      var up = el('button', 'ghost sm', '▲'); var dn = el('button', 'ghost sm', '▼');
+      up.disabled = i === 0; dn.disabled = i === E.menu.length - 1;
+      up.addEventListener('click', function(){ var x = E.menu[i]; E.menu[i] = E.menu[i - 1]; E.menu[i - 1] = x; draw(); });
+      dn.addEventListener('click', function(){ var x = E.menu[i]; E.menu[i] = E.menu[i + 1]; E.menu[i + 1] = x; draw(); });
+      mv.appendChild(up); mv.appendChild(dn); row.appendChild(mv);
+      var sw = el('label', 'chk'); var sc = el('input'); sc.type = 'checkbox'; sc.checked = !!it.show;
+      sc.addEventListener('change', function(){ it.show = sc.checked; row.className = 'erow' + (it.show ? '' : ' off'); });
+      sw.appendChild(sc); sw.appendChild(document.createTextNode(' แสดง')); row.appendChild(sw);
+      var ic = el('input'); ic.type = 'text'; ic.className = 'ico'; ic.maxLength = 8; ic.value = it.icon;
+      ic.addEventListener('input', function(){ it.icon = ic.value; }); 
+      var mid = el('div', 'mid');
+      var ti = el('input'); ti.type = 'text'; ti.maxLength = 40; ti.value = it.title; ti.placeholder = 'ชื่อเมนู';
+      ti.addEventListener('input', function(){ it.title = ti.value; });
+      var de = el('input'); de.type = 'text'; de.maxLength = 120; de.value = it.desc; de.placeholder = 'คำอธิบายสั้น ๆ';
+      de.addEventListener('input', function(){ it.desc = de.value; });
+      mid.appendChild(ti); mid.appendChild(de); mid.appendChild(el('div', 'meta', 'หน้า: ' + (NAMES[it.page] || it.page)));
+      row.appendChild(mid);
+      list.appendChild(row);
+    });
+  }
+  draw();
+
+  var bt = el('div', 'btns'); bt.style.marginTop = '14px';
+  var sv = el('button', null, 'บันทึก'); var cn = el('button', 'ghost', 'ยกเลิก'); var rs = el('button', 'bad', 'คืนค่าเริ่มต้น');
+  bt.appendChild(sv); bt.appendChild(cn); bt.appendChild(rs); c.appendChild(bt);
+  sv.addEventListener('click', function(){
+    sv.disabled = true; sv.textContent = 'กำลังบันทึก…';
+    google.script.run
+      .withSuccessHandler(function(){ toast('บันทึกหน้าแรกแล้ว'); load(); })
+      .withFailureHandler(function(e){ toast((e && e.message) || String(e), true); sv.disabled = false; sv.textContent = 'บันทึก'; })
+      .homeSaveConfig({ menu: E.menu, noticeText: E.notice.text, noticeShow: E.notice.show, greet: E.greet });
+  });
+  cn.addEventListener('click', function(){ box.style.display = 'none'; });
+  twoStep(rs, 'กดอีกครั้งเพื่อคืนค่า', function(btn, orig){ act('homeResetConfig', [], btn, orig, 'คืนค่าเริ่มต้นแล้ว'); });
+  box.appendChild(c);
+}
+
+/* ═══ workflow: ตรวจคำขอ · ลงนาม · แนบใบลงนาม ═══ */
+function kindChip(k){ return el('span', 'chip ' + (k === 'จ่ายออก' ? 'give' : 'borrow'), k || 'เบิก-คืน'); }
+function signRow(r){
+  var d = el('div', 'signs');
+  var mk = function(okk, label){ var x = el('span', 'sg ' + (okk ? 'ok' : 'no'), (okk ? '✓ ' : '○ ') + label); return x; };
+  d.appendChild(mk(r.eApv, 'ผู้อนุมัติลงนาม'));
+  d.appendChild(mk(r.eReq, 'ผู้ขอลงนาม'));
+  if (r.signedUrl) { var a = el('a', 'sg ok', '✓ ใบลงนามที่แนบ'); a.href = r.signedUrl; a.target = '_blank'; a.rel = 'noopener'; d.appendChild(a); }
+  if (r.changed) d.appendChild(el('span', 'sg bad', 'เอกสารถูกแก้หลังลงนาม ต้องลงนามใหม่'));
+  return d;
+}
+function fileToB64(f, cb){ var rd = new FileReader(); rd.onload = function(){ cb(String(rd.result).split(',')[1] || ''); }; rd.readAsDataURL(f); }
+function uploadSignedBtn(reqId){
+  var wrap = el('label', 'btnlike', 'แนบใบลงนาม');
+  var inp = el('input'); inp.type = 'file'; inp.accept = 'application/pdf,image/jpeg,image/png'; inp.hidden = true;
+  wrap.appendChild(inp);
+  inp.addEventListener('change', function(){
+    var f = inp.files && inp.files[0]; if (!f) return;
+    if (f.size > 10 * 1024 * 1024) { toast('ไฟล์ใหญ่เกิน 10 MB', true); return; }
+    wrap.firstChild.textContent = 'กำลังอัปโหลด…';
+    fileToB64(f, function(b64){
+      google.script.run.withSuccessHandler(function(up){
+        act('attachSigned', [reqId, up.url], null, '', 'แนบใบลงนามแล้ว ' + reqId);
+      }).withFailureHandler(function(e){ toast((e && e.message) || String(e), true); wrap.firstChild.textContent = 'แนบใบลงนาม'; })
+        .uploadAttachment({ name: 'ใบลงนาม ' + reqId + ' ' + f.name, mimeType: f.type, data: b64 });
+    });
+  });
+  return wrap;
+}
+function renderReview(app, list){
+  app.appendChild(section('รอตรวจคำขอ', list.length, 'sec-review'));
+  if (!list.length) app.appendChild(el('div', 'empty', 'ไม่มีคำขอรอตรวจ'));
+  list.forEach(function(r){
+    var c = el('div', 'card item');
+    var main = el('div', 'main');
+    var t = el('div'); t.appendChild(el('span', 'id', r.id)); t.appendChild(document.createTextNode('  ')); t.appendChild(kindChip(r.kind));
+    t.appendChild(document.createTextNode('  ' + r.requester + (r.org ? ' · ' + r.org : '')));
+    main.appendChild(t);
+    main.appendChild(el('div', 'meta', 'ส่งเมื่อ ' + r.created + (r.dueDate ? ' · กำหนดคืน ' + r.dueDate : '') + (r.purpose ? ' · ' + r.purpose : '')));
+    if (r.file) { var lf = el('div', 'signs'); var la = el('a', 'sg ok', 'ดูหนังสือที่แนบ'); la.href = r.file; la.target = '_blank'; la.rel = 'noopener'; lf.appendChild(la); main.appendChild(lf); }
+    else if (r.kind === 'จ่ายออก' && r.org) main.appendChild(el('div', 'signs')).appendChild(el('span', 'sg bad', 'ไม่มีหนังสือแนบ'));
+    var ul = el('ul', 'lines');
+    (r.lines || []).forEach(function(l){ var li = el('li', l.short ? 'short' : null, l.name + ' × ' + l.qty + (l.short ? '  (ของว่างไม่พอ)' : '')); ul.appendChild(li); });
+    main.appendChild(ul);
+    var rej = el('div', 'btns'); rej.style.display = 'none'; rej.style.marginTop = '8px';
+    var inp = el('input'); inp.type = 'text'; inp.placeholder = 'เหตุผลที่ไม่อนุมัติ';
+    var rb = el('button', 'bad', 'ยืนยันไม่อนุมัติ');
+    rej.appendChild(inp); rej.appendChild(rb); main.appendChild(rej);
+    c.appendChild(main);
+    var bt = el('div', 'btns');
+    var ok = el('button', null, 'อนุมัติและลงนาม'); var no = el('button', 'bad', 'ไม่อนุมัติ');
+    bt.appendChild(ok); bt.appendChild(no); c.appendChild(bt);
+    twoStep(ok, 'กดอีกครั้งเพื่ออนุมัติและลงนามอิเล็กทรอนิกส์', function(btn, orig){ act('reviewRequest', [r.id, 'approve', ''], btn, orig, 'อนุมัติแล้ว ' + r.id); });
+    no.addEventListener('click', function(){ rej.style.display = rej.style.display === 'none' ? 'flex' : 'none'; if (rej.style.display !== 'none') inp.focus(); });
+    rb.addEventListener('click', function(){
+      if (inp.value.trim().length < 3) { toast('กรุณาระบุเหตุผล', true); return; }
+      rb.disabled = true; rb.textContent = 'กำลังบันทึก…';
+      act('reviewRequest', [r.id, 'reject', inp.value.trim()], rb, 'ยืนยันไม่อนุมัติ', 'บันทึกไม่อนุมัติแล้ว ' + r.id);
+    });
+    app.appendChild(c);
+  });
+}
+
+function renderAdmin(app, A){
+  app.appendChild(el('h2', null, 'งานที่รอแอดมินดำเนินการ'));
+  var st = el('div', 'grid stats');
+  var stats = [['รอจ่ายของออก', A.toDispatch.length, '#sec-dispatch'], ['รอตรวจรับคืน', A.returns.length, '#sec-return'],
+   ['เกินกำหนดคืน', A.overdue.length, '#sec-overdue'], ['ผู้ใช้ภายนอก', A.externals.length, '#sec-ext']];
+  if (B.review) stats.unshift(['รอตรวจคำขอ', (A.toReview || []).length, '#sec-review']);   // 
+  if (B.review) st.className = 'grid stats five';
+  stats.forEach(function(s){
+    var a = el('a', 'card st' + (s[1] > 0 && s[0] !== 'ผู้ใช้ภายนอก' ? ' hot' : '')); a.target = '_self'; a.href = s[2];
+    a.addEventListener('click', function(ev){ ev.preventDefault(); var t = document.querySelector(s[2]); if (t) t.scrollIntoView({behavior:'smooth'}); });
+    a.appendChild(el('div', 'n', String(s[1]))); a.appendChild(el('div', 'l', s[0]));
+    st.appendChild(a);
+  });
+  app.appendChild(st);
+
+  // รอตรวจคำขอ
+  if (B.review) renderReview(app, A.toReview || []);
+
+  // รอจ่ายของออก
+  app.appendChild(section('รอจ่ายของออก', A.toDispatch.length, 'sec-dispatch'));
+  if (!A.toDispatch.length) app.appendChild(el('div', 'empty', 'ไม่มีเอกสารค้างจ่าย'));
+  A.toDispatch.forEach(function(r){
+    var c = el('div', 'card item');
+    var main = el('div', 'main');
+    var t = el('div'); t.appendChild(el('span', 'id', r.id)); t.appendChild(document.createTextNode('  ' + r.requester + (r.org ? ' · ' + r.org : '')));
+    main.appendChild(t);
+    main.appendChild(el('div', 'meta', 'วันที่ขอ ' + r.created + (r.dueDate ? ' · กำหนดคืน ' + r.dueDate : '') + (r.purpose ? ' · ' + r.purpose : '')));
+    main.appendChild(linesList(r.lines));
+    if (B.review) main.appendChild(signRow(r));                       // 
+    c.appendChild(main);
+    var bt = el('div', 'btns');
+    if (B.review) {
+      var pr = el('a', 'btnlike', 'พิมพ์ใบ'); pr.href = 'request.html?print=' + encodeURIComponent(r.id); pr.target = '_blank'; pr.rel = 'noopener';
+      bt.appendChild(pr);
+      if (!r.signedUrl) bt.appendChild(uploadSignedBtn(r.id));
+    }
+    var b = el('button', null, r.kind === 'จ่ายออก' ? 'จ่ายออก (ไม่ต้องคืน)' : 'จ่ายของออก'); bt.appendChild(b); c.appendChild(bt);
+    if (B.review && !r.ready) { b.disabled = true; b.title = 'รอลงนามให้ครบ หรือแนบใบที่ลงนามแล้ว'; }
+    twoStep(b, 'กดอีกครั้งเพื่อยืนยันจ่าย', function(btn, orig){ act('homeDispatch', [r.id], btn, orig, 'จ่ายแล้ว ' + r.id); });
+    app.appendChild(c);
+  });
+
+  // รอตรวจรับคืน
+  app.appendChild(section('รอตรวจรับคืน', A.returns.length, 'sec-return'));
+  if (!A.returns.length) app.appendChild(el('div', 'empty', 'ไม่มีรายการแจ้งคืนค้างตรวจ'));
+  A.returns.forEach(function(r){
+    var c = el('div', 'card item');
+    var main = el('div', 'main');
+    var t = el('div'); t.appendChild(el('span', 'id', r.id)); t.appendChild(document.createTextNode('  เอกสาร ' + r.reqId + ' · ผู้แจ้ง ' + r.who));
+    main.appendChild(t);
+    main.appendChild(el('div', 'meta', 'แจ้งเมื่อ ' + r.at));
+    main.appendChild(el('div', null, r.items));
+    var rej = el('div', 'btns'); rej.style.display = 'none'; rej.style.marginTop = '8px';
+    var inp = el('input'); inp.type = 'text'; inp.placeholder = 'เหตุผลที่ไม่รับคืน';
+    var rb = el('button', 'bad', 'ยืนยันไม่รับคืน');
+    rej.appendChild(inp); rej.appendChild(rb); main.appendChild(rej);
+    c.appendChild(main);
+    var bt = el('div', 'btns');
+    var ok = el('button', null, 'ยืนยันรับคืน'); var no = el('button', 'bad', 'ไม่รับคืน');
+    if (!r.hasData) { ok.disabled = true; ok.title = 'รายการเก่า ไม่มีข้อมูลละเอียด'; }
+    bt.appendChild(ok); bt.appendChild(no); c.appendChild(bt);
+    twoStep(ok, 'กดอีกครั้งเพื่อลงบัญชีรับคืน', function(btn, orig){ act('homeConfirmReturn', [r.id], btn, orig, 'รับคืนแล้ว ' + r.id); });
+    no.addEventListener('click', function(){ rej.style.display = rej.style.display === 'none' ? 'flex' : 'none'; if (rej.style.display !== 'none') inp.focus(); });
+    rb.addEventListener('click', function(){
+      if (inp.value.trim().length < 3) { toast('กรุณาระบุเหตุผล', true); return; }
+      rb.disabled = true; rb.textContent = 'กำลังบันทึก…';
+      act('homeRejectReturn', [r.id, inp.value.trim()], rb, 'ยืนยันไม่รับคืน', 'บันทึกไม่รับคืนแล้ว');
+    });
+    app.appendChild(c);
+  });
+
+  // เกินกำหนดคืน
+  app.appendChild(section('เกินกำหนดคืน', A.overdue.length, 'sec-overdue'));
+  if (!A.overdue.length) app.appendChild(el('div', 'empty', 'ไม่มีเอกสารเกินกำหนด'));
+  A.overdue.forEach(function(r){
+    var c = el('div', 'card item');
+    var main = el('div', 'main');
+    var t = el('div'); t.appendChild(el('span', 'id', r.id)); t.appendChild(document.createTextNode('  ' + r.requester + (r.org ? ' · ' + r.org : '')));
+    main.appendChild(t);
+    main.appendChild(el('div', 'meta', 'กำหนดคืน ' + r.dueDate + (r.purpose ? ' · ' + r.purpose : '')));
+    main.appendChild(linesList(r.lines));
+    c.appendChild(main); app.appendChild(c);
+  });
+
+  // ผู้ใช้ภายนอก
+  app.appendChild(section(homeTx('ผู้ใช้ภายนอก', 'External users'), A.externals.length, 'sec-ext'));
+  if (!A.externals.length) { app.appendChild(el('div', 'empty', homeTx('ยังไม่มีผู้กรอกแบบสอบถาม', 'No survey responses yet'))); return; }
+  var wrap = el('div', 'card scroll');
+  var tb = el('table');
+  var hr = el('tr'); [['ชื่อ', 'Name'], ['หน่วยงาน / องค์กร', 'Organisation'], ['เบอร์โทร', 'Phone'], ['ต้องการ', 'Needs'], ['วัตถุประสงค์', 'Purpose'], ['สถานะ', 'Status'], ['', '']].forEach(function(x){ hr.appendChild(el('th', null, homeTx(x[0], x[1]))); });
+  tb.appendChild(hr);
+  A.externals.forEach(function(u){
+    var tr = el('tr', u.active ? '' : 'off');
+    var nm = el('td'); nm.appendChild(el('div', null, u.name)); nm.appendChild(el('div', 'meta', u.email)); tr.appendChild(nm);
+    tr.appendChild(el('td', null, u.org)); tr.appendChild(el('td', null, u.phone)); tr.appendChild(el('td', null, homeDataTx(u.want))); tr.appendChild(el('td', null, homeDataTx(u.purpose)));
+    var s = el('td'); s.appendChild(el('span', 'tag' + (u.active ? ' ok' : ''), homeTx(u.active ? 'ใช้งานได้' : 'ปิดสิทธิ์', u.active ? 'Active' : 'Disabled'))); tr.appendChild(s);
+    var a = el('td'); var bb = el('button', 'ghost', homeTx(u.active ? 'ปิดสิทธิ์' : 'เปิดสิทธิ์', u.active ? 'Disable access' : 'Enable access')); a.appendChild(bb); tr.appendChild(a);
+    twoStep(bb, homeTx('ยืนยัน', 'Confirm'), function(btn, orig){ act('homeSetExternal', [u.email, !u.active], btn, orig, homeTx(u.active ? 'ปิดสิทธิ์แล้ว ' : 'เปิดสิทธิ์แล้ว ', u.active ? 'Access disabled ' : 'Access enabled ') + u.name); });
+    tb.appendChild(tr);
+  });
+  wrap.appendChild(tb); app.appendChild(wrap);
+}
+firstLoad();
+</script>
+
+<div id="confirmModal" class="confirm-modal" hidden aria-hidden="true">
+  <div class="confirm-modal-backdrop" data-confirm-close></div>
+  <section class="confirm-modal-panel" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+    <h2 id="confirmModalTitle">ยืนยันการดำเนินการ</h2>
+    <p id="confirmModalText"></p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn ghost" data-confirm-close>ยกเลิก</button>
+      <button type="button" class="btn" id="confirmModalSubmit">ยืนยัน</button>
+    </div>
+  </section>
+</div>
+</body>
+</html>
